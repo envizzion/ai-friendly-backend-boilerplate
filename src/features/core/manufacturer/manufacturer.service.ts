@@ -1,4 +1,3 @@
-import { ManufacturerRepository } from './manufacturer.repository';
 import {
     CreateManufacturerDto,
     ManufacturerDetailDto,
@@ -8,7 +7,8 @@ import {
     UpdateManufacturerDto,
     toManufacturerDetailDto,
     toManufacturerDto
-} from './manufacturer.dto';
+} from './manufacturer.dto.js';
+import { ManufacturerRepository } from './manufacturer.repository.js';
 
 export class ManufacturerService {
     private repository: ManufacturerRepository;

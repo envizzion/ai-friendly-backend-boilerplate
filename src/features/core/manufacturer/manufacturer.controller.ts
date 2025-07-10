@@ -1,6 +1,6 @@
 import { Context } from 'hono';
-import { ManufacturerService } from './manufacturer.service';
-import { CreateManufacturerDto, UpdateManufacturerDto } from './manufacturer.dto';
+import { CreateManufacturerDto, UpdateManufacturerDto } from './manufacturer.dto.js';
+import { ManufacturerService } from './manufacturer.service.js';
 
 export class ManufacturerController {
     private service: ManufacturerService;

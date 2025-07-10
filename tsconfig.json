@@ -26,6 +26,51 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@features/*": [
+        "src/features/*"
+      ],
+      "@core/*": [
+        "src/features/core/*"
+      ],
+      "@customer/*": [
+        "src/features/customer/*"
+      ],
+      "@vendor/*": [
+        "src/features/vendor/*"
+      ],
+      "@common/*": [
+        "src/features/common/*"
+      ],
+      "@database/*": [
+        "src/shared/database/*"
+      ],
+      "@schemas/*": [
+        "src/shared/database/schemas/*"
+      ],
+      "@core-schemas/*": [
+        "src/shared/database/schemas/core/*"
+      ],
+      "@customer-schemas/*": [
+        "src/shared/database/schemas/customer/*"
+      ],
+      "@vendor-schemas/*": [
+        "src/shared/database/schemas/vendor/*"
+      ],
+      "@cloud/*": [
+        "src/shared/cloud/*"
+      ],
+      "@utils/*": [
+        "src/shared/utils/*"
+      ],
+      "@types/*": [
+        "src/shared/types/*"
       ]
     }
   },

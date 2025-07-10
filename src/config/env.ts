@@ -1,2 +1,2 @@
 // Move from src/lib/env.ts when ready
-export * from '../shared/env';
+export * from '../shared/env.js';

@@ -1,4 +1,4 @@
-import type { Manufacturer } from '../../shared/database/schema/generated';
+import type { Manufacturer } from '@core-schemas/kysely-types.js';
 import { Selectable } from 'kysely';
 
 export interface ManufacturerDto {

@@ -6,39 +6,22 @@
  */
 
 // Import section-specific DB interfaces
-import type { DB as CoreDB } from './core/kysely-types';
-import type { DB as VendorDB } from './vendor/kysely-types';
-import type { DB as CustomerDB } from './customer/kysely-types';
+import type { DB as CoreDB } from '@core-schemas/kysely-types.js';
+import type { DB as CustomerDB } from '@customer-schemas/kysely-types.js';
+import type { DB as VendorDB } from '@vendor-schemas/kysely-types.js';
 
 // Re-export individual section interfaces
-export type { DB as CoreDB } from './core/kysely-types';
-export type { DB as VendorDB } from './vendor/kysely-types';
-export type { DB as CustomerDB } from './customer/kysely-types';
+export type { DB as CoreDB } from '@core-schemas/kysely-types.js';
+export type { DB as CustomerDB } from '@customer-schemas/kysely-types.js';
+export type { DB as VendorDB } from '@vendor-schemas/kysely-types.js';
 
 // Re-export common types from core section
 export type {
-  User,
-  Manufacturer,
-  Model,
-  BodyStyle,
-  Color,
-  ModelVariation,
-  VinPrefix,
-  VehicleHierarchyAudit,
-  File,
-  PartName,
-  PartCategory,
-  ModelVariationCategory,
+  BodyStyle, CategoryPart, Color, Coordinates, File, Int8, Manufacturer,
+  Model, ModelVariation, ModelVariationCategory,
   ModelVariationToCategory,
-  Part,
-  CategoryPart,
-  PartAlternative,
-  Tag,
-  PartTag,
-  Coordinates,
-  Timestamp,
-  Int8
-} from './core/kysely-types';
+  Part, PartAlternative, PartCategory, PartName, PartTag, Tag, Timestamp, User, VehicleHierarchyAudit, VinPrefix
+} from './core/kysely-types.js';
 
 // ============================================
 // UNIFIED DATABASE INTERFACE

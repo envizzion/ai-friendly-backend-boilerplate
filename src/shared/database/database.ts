@@ -1,7 +1,7 @@
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import pkg from 'pg';
-import env from '../lib/env.js';
-import { DB } from './schema/generated.js';
+import env from '../env.js';
+import { DB } from './schemas/index.js';
 
 const { Pool } = pkg;
 
@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 
 // Create a Kysely instance using the PostgreSQL dialect
-export const db = new Kysely<DB>({
+export const dbConn = new Kysely<DB>({
   dialect: new PostgresDialect({
     pool,
   }),
@@ -38,7 +38,7 @@ export async function executeQuery<T>(
   queryFn: (db: Kysely<DB>) => Promise<T>
 ): Promise<T> {
   try {
-    return await queryFn(db);
+    return await queryFn(dbConn);
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
@@ -47,6 +47,6 @@ export async function executeQuery<T>(
 
 // Graceful shutdown function
 export async function closeDatabase(): Promise<void> {
-  await db.destroy();
+  await dbConn.destroy();
 }
 

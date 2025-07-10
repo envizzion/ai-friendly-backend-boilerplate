@@ -1,6 +1,6 @@
-import { sql, Kysely } from 'kysely';
-import type { CoreDB } from '../../../shared/database/schemas';
-import { coreDb } from '../../../shared/database/connections/core';
+import { dbConn, executeQuery } from '@database/database.js';
+import { CoreDB } from '@schemas/index.js';
+import { Kysely, sql } from 'kysely';
 
 export interface ManufacturerFilters {
     search?: string;
@@ -42,7 +42,7 @@ export interface UpdateManufacturerData {
 }
 
 export class ManufacturerRepository {
-    constructor(private db: Kysely<CoreDB> = coreDb) {}
+    constructor(private db: Kysely<CoreDB> = dbConn) { }
 
     /**
      * Helper function to convert file publicId to database ID

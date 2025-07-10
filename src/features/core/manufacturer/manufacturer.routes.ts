@@ -1,19 +1,19 @@
-import { Hono } from 'hono';
-import { ManufacturerController } from './manufacturer.controller';
-import { ManufacturerService } from './manufacturer.service';
-import { ManufacturerRepository } from './manufacturer.repository';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { ManufacturerController } from './manufacturer.controller.js';
+import { ManufacturerRepository } from './manufacturer.repository.js';
 import {
     createManufacturerRoute,
     deleteManufacturerRoute,
     getAllManufacturersRoute,
     getManufacturerByIdRoute,
     updateManufacturerRoute
-} from './manufacturer.schemas';
+} from './manufacturer.schemas.js';
+import { ManufacturerService } from './manufacturer.service.js';
 
 // Create manufacturer feature router
 export function createManufacturerRouter() {
-    const manufacturer = new Hono();
-    
+    const manufacturer = new OpenAPIHono();
+
     // Create dependencies
     const manufacturerRepository = new ManufacturerRepository();
     const manufacturerService = new ManufacturerService(manufacturerRepository);
