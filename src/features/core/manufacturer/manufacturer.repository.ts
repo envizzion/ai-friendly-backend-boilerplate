@@ -1,5 +1,5 @@
 import { dbConn, executeQuery } from '@database/database.js';
-import { CoreDB } from '@schemas/index.js';
+import { DB } from '@schemas/index.js';
 import { Kysely, sql } from 'kysely';
 
 export interface ManufacturerFilters {
@@ -42,19 +42,27 @@ export interface UpdateManufacturerData {
 }
 
 export class ManufacturerRepository {
-    constructor(private db: Kysely<CoreDB> = dbConn) { }
+    constructor(private db: Kysely<DB> = dbConn) { }
 
     /**
      * Helper function to convert file publicId to database ID
      */
     private async getFileIdFromPublicId(publicId: string): Promise<number | null> {
-        const file = await this.db
-            .selectFrom('file')
-            .select('id')
-            .where('publicId', '=', publicId)
-            .executeTakeFirst();
-
-        return file ? file.id : null;
+        return executeQuery(
+            async () => {
+                const file = await this.db
+                    .selectFrom('file')
+                    .select('id')
+                    .where('publicId', '=', publicId)
+                    .executeTakeFirst();
+                return file ? file.id : null;
+            },
+            {
+                method: 'ManufacturerRepository.getFileIdFromPublicId',
+                table: 'file',
+                operation: 'select'
+            }
+        );
     }
     /**
      * Find all manufacturers with filters, sorting, and pagination
@@ -64,13 +72,15 @@ export class ManufacturerRepository {
         sortOptions: ManufacturerSortOptions = {},
         pagination: PaginationOptions = {}
     ) {
-        const { search, status = 'all', verified, isActive, country } = filters;
-        const { sort = 'name', order = 'asc' } = sortOptions;
-        const { page = 1, limit = 20 } = pagination;
+        return executeQuery(
+            async () => {
+                const { search, status = 'all', verified, isActive, country } = filters;
+                const { sort = 'name', order = 'asc' } = sortOptions;
+                const { page = 1, limit = 20 } = pagination;
 
-        const offset = (page - 1) * limit;
+                const offset = (page - 1) * limit;
 
-        let query = this.db
+                let query = this.db
             .selectFrom('manufacturer')
             .leftJoin('model', 'manufacturer.id', 'model.manufacturerId')
             .leftJoin('file', 'manufacturer.logoImageId', 'file.id')
@@ -172,25 +182,32 @@ export class ManufacturerRepository {
         const total = Number(countResult?.count || 0);
         const totalPages = Math.ceil(total / limit);
 
-        return {
-            data,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages,
-                hasNext: page < totalPages,
-                hasPrev: page > 1,
+                return {
+                    data,
+                    pagination: {
+                        page,
+                        limit,
+                        total,
+                        totalPages,
+                        hasNext: page < totalPages,
+                        hasPrev: page > 1,
+                    },
+                };
             },
-        };
+            {
+                method: 'ManufacturerRepository.findAll',
+                table: 'manufacturer',
+                operation: 'select'
+            }
+        );
     }
 
     /**
      * Find a manufacturer by ID
      */
     async findById(id: number) {
-        return executeQuery((db) =>
-            db
+        return executeQuery(
+            () => this.db
                 .selectFrom('manufacturer')
                 .leftJoin('model', 'manufacturer.id', 'model.manufacturerId')
                 .leftJoin('file', 'manufacturer.logoImageId', 'file.id')
@@ -230,7 +247,12 @@ export class ManufacturerRepository {
                     'manufacturer.createdBy',
                     'manufacturer.updatedBy',
                 ])
-                .executeTakeFirst()
+                .executeTakeFirst(),
+            {
+                method: 'ManufacturerRepository.findById',
+                table: 'manufacturer',
+                operation: 'select'
+            }
         );
     }
 
@@ -238,8 +260,8 @@ export class ManufacturerRepository {
      * Find a manufacturer by public ID
      */
     async findByPublicId(publicId: string) {
-        return executeQuery((db) =>
-            db
+        return executeQuery(
+            () => this.db
                 .selectFrom('manufacturer')
                 .leftJoin('model', 'manufacturer.id', 'model.manufacturerId')
                 .leftJoin('file', 'manufacturer.logoImageId', 'file.id')
@@ -279,7 +301,12 @@ export class ManufacturerRepository {
                     'manufacturer.createdBy',
                     'manufacturer.updatedBy',
                 ])
-                .executeTakeFirst()
+                .executeTakeFirst(),
+            {
+                method: 'ManufacturerRepository.findByPublicId',
+                table: 'manufacturer',
+                operation: 'select'
+            }
         );
     }
 
@@ -287,12 +314,17 @@ export class ManufacturerRepository {
      * Find a manufacturer by name
      */
     async findByName(name: string) {
-        return executeQuery((db) =>
-            db
+        return executeQuery(
+            () => this.db
                 .selectFrom('manufacturer')
                 .selectAll()
                 .where('manufacturer.name', '=', name)
-                .executeTakeFirst()
+                .executeTakeFirst(),
+            {
+                method: 'ManufacturerRepository.findByName',
+                table: 'manufacturer',
+                operation: 'select'
+            }
         );
     }
 
@@ -300,8 +332,8 @@ export class ManufacturerRepository {
      * Find a manufacturer by slug
      */
     async findBySlug(slug: string) {
-        return executeQuery((db) =>
-            db
+        return executeQuery(
+            () => this.db
                 .selectFrom('manufacturer')
                 .leftJoin('model', 'manufacturer.id', 'model.manufacturerId')
                 .leftJoin('file', 'manufacturer.logoImageId', 'file.id')
@@ -341,7 +373,12 @@ export class ManufacturerRepository {
                     'manufacturer.createdBy',
                     'manufacturer.updatedBy',
                 ])
-                .executeTakeFirst()
+                .executeTakeFirst(),
+            {
+                method: 'ManufacturerRepository.findBySlug',
+                table: 'manufacturer',
+                operation: 'select'
+            }
         );
     }
 
@@ -349,28 +386,35 @@ export class ManufacturerRepository {
      * Create a new manufacturer
      */
     async create(data: CreateManufacturerData) {
-        const slug = data.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+        return executeQuery(
+            async () => {
+                const slug = data.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
-        // Convert logoImageId from publicId to database ID if provided
-        const logoImageDbId = data.logoImageId ? await this.getFileIdFromPublicId(data.logoImageId) : null;
+                // Convert logoImageId from publicId to database ID if provided
+                const logoImageDbId = data.logoImageId ? await this.getFileIdFromPublicId(data.logoImageId) : null;
 
-        return executeQuery((db) =>
-            db
-                .insertInto('manufacturer')
-                .values({
-                    name: data.name,
-                    displayName: data.displayName,
-                    slug,
-                    logoImageId: logoImageDbId,
-                    countryCode: data.countryCode,
-                    description: data.description,
-                    isActive: data.isActive ?? true,
-                    isVerified: data.isVerified ?? false,
-                    createdBy: data.createdBy,
-                    updatedBy: data.createdBy,
-                })
-                .returningAll()
-                .executeTakeFirstOrThrow()
+                return await this.db
+                    .insertInto('manufacturer')
+                    .values({
+                        name: data.name,
+                        displayName: data.displayName,
+                        slug,
+                        logoImageId: logoImageDbId,
+                        countryCode: data.countryCode,
+                        description: data.description,
+                        isActive: data.isActive ?? true,
+                        isVerified: data.isVerified ?? false,
+                        createdBy: data.createdBy,
+                        updatedBy: data.createdBy,
+                    })
+                    .returningAll()
+                    .executeTakeFirstOrThrow();
+            },
+            {
+                method: 'ManufacturerRepository.create',
+                table: 'manufacturer',
+                operation: 'insert'
+            }
         );
     }
 
@@ -378,25 +422,32 @@ export class ManufacturerRepository {
      * Update a manufacturer by ID
      */
     async update(id: number, data: UpdateManufacturerData) {
-        // Convert logoImageId from publicId to database ID if provided
-        const logoImageDbId = data.logoImageId ? await this.getFileIdFromPublicId(data.logoImageId) : undefined;
+        return executeQuery(
+            async () => {
+                // Convert logoImageId from publicId to database ID if provided
+                const logoImageDbId = data.logoImageId ? await this.getFileIdFromPublicId(data.logoImageId) : undefined;
 
-        return executeQuery((db) =>
-            db
-                .updateTable('manufacturer')
-                .set({
-                    displayName: data.displayName,
-                    logoImageId: logoImageDbId,
-                    countryCode: data.countryCode,
-                    description: data.description,
-                    isActive: data.isActive,
-                    isVerified: data.isVerified,
-                    updatedBy: data.updatedBy,
-                    updatedAt: sql`NOW()`,
-                })
-                .where('id', '=', id)
-                .returningAll()
-                .executeTakeFirst()
+                return await this.db
+                    .updateTable('manufacturer')
+                    .set({
+                        displayName: data.displayName,
+                        logoImageId: logoImageDbId,
+                        countryCode: data.countryCode,
+                        description: data.description,
+                        isActive: data.isActive,
+                        isVerified: data.isVerified,
+                        updatedBy: data.updatedBy,
+                        updatedAt: sql`NOW()`,
+                    })
+                    .where('id', '=', id)
+                    .returningAll()
+                    .executeTakeFirst();
+            },
+            {
+                method: 'ManufacturerRepository.update',
+                table: 'manufacturer',
+                operation: 'update'
+            }
         );
     }
 
@@ -404,25 +455,32 @@ export class ManufacturerRepository {
      * Update a manufacturer by public ID
      */
     async updateByPublicId(publicId: string, data: UpdateManufacturerData) {
-        // Convert logoImageId from publicId to database ID if provided
-        const logoImageDbId = data.logoImageId ? await this.getFileIdFromPublicId(data.logoImageId) : undefined;
+        return executeQuery(
+            async () => {
+                // Convert logoImageId from publicId to database ID if provided
+                const logoImageDbId = data.logoImageId ? await this.getFileIdFromPublicId(data.logoImageId) : undefined;
 
-        return executeQuery((db) =>
-            db
-                .updateTable('manufacturer')
-                .set({
-                    displayName: data.displayName,
-                    logoImageId: logoImageDbId,
-                    countryCode: data.countryCode,
-                    description: data.description,
-                    isActive: data.isActive,
-                    isVerified: data.isVerified,
-                    updatedBy: data.updatedBy,
-                    updatedAt: sql`NOW()`,
-                })
-                .where('publicId', '=', publicId)
-                .returningAll()
-                .executeTakeFirst()
+                return await this.db
+                    .updateTable('manufacturer')
+                    .set({
+                        displayName: data.displayName,
+                        logoImageId: logoImageDbId,
+                        countryCode: data.countryCode,
+                        description: data.description,
+                        isActive: data.isActive,
+                        isVerified: data.isVerified,
+                        updatedBy: data.updatedBy,
+                        updatedAt: sql`NOW()`,
+                    })
+                    .where('publicId', '=', publicId)
+                    .returningAll()
+                    .executeTakeFirst();
+            },
+            {
+                method: 'ManufacturerRepository.updateByPublicId',
+                table: 'manufacturer',
+                operation: 'update'
+            }
         );
     }
 
@@ -430,8 +488,8 @@ export class ManufacturerRepository {
      * Toggle manufacturer status
      */
     async toggleStatus(id: number, isActive: boolean, updatedBy?: string) {
-        return executeQuery((db) =>
-            db
+        return executeQuery(
+            () => this.db
                 .updateTable('manufacturer')
                 .set({
                     isActive: isActive,
@@ -440,7 +498,12 @@ export class ManufacturerRepository {
                 })
                 .where('id', '=', id)
                 .returningAll()
-                .executeTakeFirst()
+                .executeTakeFirst(),
+            {
+                method: 'ManufacturerRepository.toggleStatus',
+                table: 'manufacturer',
+                operation: 'update'
+            }
         );
     }
 
@@ -448,54 +511,68 @@ export class ManufacturerRepository {
      * Delete a manufacturer (soft delete if models exist, hard delete otherwise)
      */
     async delete(id: number): Promise<{ deleted: boolean; soft: boolean }> {
-        return executeQuery(async (db) => {
-            // Check if manufacturer has models
-            const modelsCount = await db
-                .selectFrom('model')
-                .select((eb) => eb.fn.count('model.id').as('count'))
-                .where('model.manufacturerId', '=', id)
-                .executeTakeFirst();
-
-            const hasModels = Number(modelsCount?.count || 0) > 0;
-
-            if (hasModels) {
-                // Soft delete: mark as inactive
-                const result = await db
-                    .updateTable('manufacturer')
-                    .set({ isActive: false, updatedAt: sql`NOW()` })
-                    .where('id', '=', id)
+        return executeQuery(
+            async () => {
+                // Check if manufacturer has models
+                const modelsCount = await this.db
+                    .selectFrom('model')
+                    .select((eb) => eb.fn.count('model.id').as('count'))
+                    .where('model.manufacturerId', '=', id)
                     .executeTakeFirst();
 
-                return { deleted: !!result, soft: true };
-            } else {
-                // Hard delete: remove from database
-                const result = await db
-                    .deleteFrom('manufacturer')
-                    .where('id', '=', id)
-                    .executeTakeFirst();
+                const hasModels = Number(modelsCount?.count || 0) > 0;
 
-                return { deleted: !!result, soft: false };
+                if (hasModels) {
+                    // Soft delete: mark as inactive
+                    const result = await this.db
+                        .updateTable('manufacturer')
+                        .set({ isActive: false, updatedAt: sql`NOW()` })
+                        .where('id', '=', id)
+                        .executeTakeFirst();
+
+                    return { deleted: !!result, soft: true };
+                } else {
+                    // Hard delete: remove from database
+                    const result = await this.db
+                        .deleteFrom('manufacturer')
+                        .where('id', '=', id)
+                        .executeTakeFirst();
+
+                    return { deleted: !!result, soft: false };
+                }
+            },
+            {
+                method: 'ManufacturerRepository.delete',
+                table: 'manufacturer',
+                operation: 'delete'
             }
-        });
+        );
     }
 
     /**
      * Delete a manufacturer by public ID
      */
     async deleteByPublicId(publicId: string): Promise<{ deleted: boolean; soft: boolean }> {
-        return executeQuery(async (db) => {
-            // First get the manufacturer ID
-            const manufacturer = await db
-                .selectFrom('manufacturer')
-                .select('id')
-                .where('publicId', '=', publicId)
-                .executeTakeFirst();
+        return executeQuery(
+            async () => {
+                // First get the manufacturer ID
+                const manufacturer = await this.db
+                    .selectFrom('manufacturer')
+                    .select('id')
+                    .where('publicId', '=', publicId)
+                    .executeTakeFirst();
 
-            if (!manufacturer) {
-                return { deleted: false, soft: false };
+                if (!manufacturer) {
+                    return { deleted: false, soft: false };
+                }
+
+                return this.delete(manufacturer.id);
+            },
+            {
+                method: 'ManufacturerRepository.deleteByPublicId',
+                table: 'manufacturer',
+                operation: 'delete'
             }
-
-            return this.delete(manufacturer.id);
-        });
+        );
     }
 }

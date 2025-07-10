@@ -2,6 +2,7 @@ import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import pkg from 'pg';
 import env from '../env.js';
 import { DB } from './schemas/index.js';
+import { logger } from '@shared/logger.js';
 
 const { Pool } = pkg;
 
@@ -33,16 +34,53 @@ export async function testConnection(): Promise<void> {
   await pool.query('SELECT 1');
 }
 
-// Example query function
+export interface QueryContext {
+    method: string;
+    table?: string;
+    operation?: string;
+}
+
+/**
+ * Execute database query with logging and error handling
+ */
 export async function executeQuery<T>(
-  queryFn: (db: Kysely<DB>) => Promise<T>
+    operation: () => Promise<T>,
+    context: QueryContext
 ): Promise<T> {
-  try {
-    return await queryFn(dbConn);
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
-  }
+    const startTime = Date.now();
+    
+    try {
+        const result = await operation();
+        const duration = Date.now() - startTime;
+        
+        // Log slow queries (>1000ms)
+        if (duration > 1000) {
+            logger.info('Slow query detected', {
+                method: context.method,
+                table: context.table,
+                operation: context.operation,
+                duration: `${duration}ms`
+            });
+        }
+        
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        
+        // Enhanced error logging
+        logger.error('Database query failed', {
+            method: context.method,
+            table: context.table,
+            operation: context.operation,
+            duration: `${duration}ms`,
+            error: error instanceof Error ? error.message : String(error),
+            errorCode: (error as any)?.code,
+            errorConstraint: (error as any)?.constraint,
+            stack: error instanceof Error ? error.stack : undefined
+        });
+        
+        throw error;
+    }
 }
 
 // Graceful shutdown function
