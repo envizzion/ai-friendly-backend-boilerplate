@@ -85,6 +85,12 @@ export async function executeQuery<T>(
 
 // Graceful shutdown function
 export async function closeDatabase(): Promise<void> {
-  await dbConn.destroy();
+  try {
+    await dbConn.destroy();
+    logger.info('Database connection closed successfully');
+  } catch (error) {
+    logger.error('Error closing database connection:', error);
+    throw error;
+  }
 }
 

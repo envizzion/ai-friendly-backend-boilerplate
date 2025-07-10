@@ -1,12 +1,13 @@
-import { Hono } from 'hono';
-import { createManufacturerRouter } from './features/core/manufacturer/manufacturer.routes';
+import { createManufacturerRouter } from '@features/core/manufacturer/manufacturer.routes.js';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { healthRoutes } from './routes/health.js';
 
-const api = new Hono();
+const api = new OpenAPIHono();
 
 // ============================================
 // CORE SECTION - Catalog Management
 // ============================================
-const core = new Hono();
+const core = new OpenAPIHono();
 
 // Core catalog features (used by both vendors and customers)
 core.route('/manufacturers', createManufacturerRouter());
@@ -27,7 +28,7 @@ core.route('/manufacturers', createManufacturerRouter());
 // ============================================
 // COMMON SECTION - Shared Services
 // ============================================
-const common = new Hono();
+const common = new OpenAPIHono();
 
 // TODO: Add common feature routes as they're migrated
 // import { createFileUploadRouter } from './features/common/file-upload/file-upload.routes';
@@ -43,7 +44,7 @@ const common = new Hono();
 // ============================================
 // VENDOR SECTION - Seller/Supplier Features  
 // ============================================
-const vendor = new Hono();
+const vendor = new OpenAPIHono();
 
 // TODO: Vendor-specific features
 // import { createVendorInventoryRouter } from './features/vendor/inventory/inventory.routes';
@@ -61,7 +62,7 @@ const vendor = new Hono();
 // ============================================
 // CUSTOMER SECTION - Buyer Features
 // ============================================
-const customer = new Hono();
+const customer = new OpenAPIHono();
 
 // TODO: Customer-specific features  
 // import { createProductSearchRouter } from './features/customer/search/search.routes';
@@ -75,6 +76,11 @@ const customer = new Hono();
 // customer.route('/orders', createCustomerOrderRouter());
 // customer.route('/profile', createCustomerProfileRouter());
 // customer.route('/wishlist', createWishlistRouter());
+
+// ============================================
+// SYSTEM ROUTES - Health checks and monitoring
+// ============================================
+api.route('/', healthRoutes);
 
 // ============================================
 // REGISTER MAIN SECTIONS

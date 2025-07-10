@@ -1,13 +1,11 @@
-import app from './server';
+import Server from './server.js';
 
-// Basic startup - will need to be enhanced with original startup logic
-const port = process.env.PORT || 3000;
+const server = new Server();
 
-console.log(`🚀 Server running on port ${port}`);
-console.log(`📝 API available at http://localhost:${port}/api`);
-console.log(`📚 Docs available at http://localhost:${port}/doc`);
+// Start the server
+server.start().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
 
-export default {
-  port,
-  fetch: app.fetch,
-};
+export default server;

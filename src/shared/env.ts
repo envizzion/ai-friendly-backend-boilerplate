@@ -18,6 +18,7 @@ const envSchema = z.object({
   // Redis configuration
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().default('6379'),
+  REDIS_PASSWORD: z.string().optional(),
 
   // File storage configuration
   CDN_URL_EXPIRY_HOURS: z.string().default('24'), // CDN URL expiration time in hours
