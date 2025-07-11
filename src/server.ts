@@ -9,10 +9,10 @@ import { trimTrailingSlash } from 'hono/trailing-slash';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { testConnection, closeDatabase } from '@database/database.js';
+import { closeDatabase, testConnection } from '@database/database.js';
 import env from '@shared/env.js';
 import { logger } from '@shared/logger.js';
-import { startWorker, closeQueue, registerTaskProcessor } from '@shared/messaging/queue.js';
+import { closeQueue, registerTaskProcessor, startWorker } from '@shared/messaging/queue.js';
 import { WelcomeEmailTask } from '@shared/messaging/tasks/welcome-email.task.js';
 import { api } from './routes.js';
 
@@ -41,7 +41,7 @@ class Server {
         path: c.req.path,
         method: c.req.method,
       });
-      return c.json({ 
+      return c.json({
         message: 'Internal server error',
         path: c.req.path,
         error: isDev ? err.message : 'Internal server error'
@@ -50,7 +50,7 @@ class Server {
 
     // Index path
     this.app.get('/', (c) => {
-      return c.json({ 
+      return c.json({
         message: 'Parts App API',
         version: '1.0.0',
         timestamp: new Date().toISOString()
@@ -85,7 +85,7 @@ class Server {
       },
       servers: [
         {
-          url: '/api',
+          url: '',
           description: isDev ? 'Development server' : 'Production server'
         }
       ]
@@ -132,7 +132,7 @@ class Server {
       if (!fs.existsSync(openApiDir)) {
         fs.mkdirSync(openApiDir, { recursive: true });
       }
-      
+
       const jsonPath = path.join(openApiDir, 'openapi.json');
       fs.writeFileSync(jsonPath, JSON.stringify(document, null, 2));
       logger.info(`OpenAPI JSON exported to: ${jsonPath}`);
@@ -149,7 +149,7 @@ class Server {
     try {
       // Register task processors
       registerTaskProcessor('welcome-email', new WelcomeEmailTask());
-      
+
       // Start the worker
       startWorker();
       this.workerStarted = true;
@@ -174,9 +174,9 @@ class Server {
 
       // Start server
       const port = Number.parseInt(env.PORT);
-      const server = serve({ 
-        fetch: this.app.fetch, 
-        port 
+      const server = serve({
+        fetch: this.app.fetch,
+        port
       });
 
       logger.info(`🚀 Server running on port: ${port}`);
@@ -187,7 +187,7 @@ class Server {
       process.on('SIGTERM', () => {
         logger.info('SIGTERM signal received');
         logger.info('Closing http server');
-        
+
         server.close(async () => {
           logger.info('Closing queue system');
           await closeQueue();
@@ -201,7 +201,7 @@ class Server {
       process.on('SIGINT', () => {
         logger.info('SIGINT signal received');
         logger.info('Closing http server');
-        
+
         server.close(async () => {
           logger.info('Closing queue system');
           await closeQueue();
