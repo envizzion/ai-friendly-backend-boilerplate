@@ -1,7 +1,6 @@
-import { UserService } from '@/service/user.service.ts';
-import { logger } from '../lib/logger.js';
+import { logger } from '@shared/logger.js';
 
-const sendWelcomeEmail = async (data: any, userService: UserService) => {
+const sendWelcomeEmail = async (data: { userId: string }, userService: any) => {
   const user = await userService.findById(data.userId);
   logger.info(`Welcome email sent to ${user?.email}`);
 };

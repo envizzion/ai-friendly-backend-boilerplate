@@ -1,10 +1,10 @@
-import env from '@/lib/env.js';
-import { logger } from '@/lib/logger.js';
-import { FileUploadService } from '@/service/file-upload.service.js';
+import env from '@shared/env.js';
+import { logger } from '@shared/logger.js';
+import { FileUploadService } from '@common/file-upload/file-upload.service.js';
 import {
     PartsCatalogAnalysisRequest,
     PartsCatalogAnalysisResult
-} from '@/types/dto/ai-analysis.dto.js';
+} from '@types/dto/ai-analysis.dto.js';
 import { GoogleGenAI, Type } from '@google/genai';
 import { GCPConfig } from '../cloud-provider.interface.js';
 import { GCPCloudProvider, GCPCredentials } from '../gcp-cloud-provider.js';

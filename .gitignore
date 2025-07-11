@@ -9,3 +9,4 @@ dist
 /static/openapi.json
 credentials/
 openapi
+build

@@ -1,9 +1,9 @@
-import { logger } from '@/lib/logger.js';
+import { logger } from '@shared/logger.js';
 import {
     AnalyzeImageRequest,
     DetectedPartLabel,
     ImageAnalysisResult
-} from '@/types/dto/image-analysis.dto.js';
+} from '@types/dto/image-analysis.dto.js';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { GCPConfig } from '../cloud-provider.interface.js';
 import { GCPCloudProvider, GCPCredentials } from '../gcp-cloud-provider.js';

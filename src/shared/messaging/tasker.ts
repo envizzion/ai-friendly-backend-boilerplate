@@ -1,7 +1,7 @@
-import { UserService } from '@/service/user.service.ts';
+import { logger } from '@shared/logger.js';
+import { connection } from '@shared/messaging/queue.js';
+import { QUEUE } from '@shared/queue.js';
 import { type Job, Worker } from 'bullmq';
-import { logger } from '../lib/logger.js';
-import { QUEUE, connection } from '../lib/queue.js';
 import sendWelcomeEmail from './sendWelcomeEmail.js';
 
 const TASK = {
@@ -9,9 +9,9 @@ const TASK = {
 };
 
 class Tasker {
-  private readonly userService: UserService;
+  private readonly userService: any;
 
-  constructor(userService: UserService) {
+  constructor(userService: any) {
     this.userService = userService;
 
     this.setup = this.setup.bind(this);

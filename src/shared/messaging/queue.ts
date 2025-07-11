@@ -4,7 +4,7 @@ import env from '@shared/env.js';
 import { logger } from '@shared/logger.js';
 
 // Redis connection for BullMQ
-export const connection = new IORedis({
+export const connection = new IORedis.default({
   host: env.REDIS_HOST,
   port: parseInt(env.REDIS_PORT),
   password: env.REDIS_PASSWORD,
@@ -17,7 +17,7 @@ connection.on('connect', () => {
   logger.info('Connected to Redis for queue processing');
 });
 
-connection.on('error', (error) => {
+connection.on('error', (error: Error) => {
   logger.error('Redis connection error:', error);
 });
 

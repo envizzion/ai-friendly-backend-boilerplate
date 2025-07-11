@@ -1,5 +1,5 @@
-import env from '@/lib/env.js';
-import { logger } from '@/lib/logger.js';
+import env from '@shared/env.js';
+import { logger } from '@shared/logger.js';
 import { AWSConfig, CloudProvider } from './cloud-provider.interface.js';
 
 export interface AWSCredentials {

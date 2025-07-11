@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '../schemas/customer/drizzle-schema';
+import * as schema from '@customer-schemas/drizzle-schema.js';
 
 // Create PostgreSQL client for customer database operations (same database, customer schema)
 const customerClient = postgres(process.env.DATABASE_URL!);

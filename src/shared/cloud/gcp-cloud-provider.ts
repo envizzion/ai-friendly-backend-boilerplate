@@ -1,5 +1,5 @@
-import env from '@/lib/env.js';
-import { logger } from '@/lib/logger.js';
+import env from '@shared/env.js';
+import { logger } from '@shared/logger.js';
 import fs from 'fs';
 import { CloudProvider, GCPConfig } from './cloud-provider.interface.js';
 

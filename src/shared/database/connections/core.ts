@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '../schemas/core/drizzle-schema';
+import * as schema from '@core-schemas/drizzle-schema.js';
 
 // Create PostgreSQL client for core database operations
 const coreClient = postgres(process.env.DATABASE_URL!);

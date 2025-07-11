@@ -1,4 +1,4 @@
-import { AnalyzeImageRequest, ImageAnalysisResult } from '@/types/dto/image-analysis.dto.js';
+import { AnalyzeImageRequest, ImageAnalysisResult } from '@types/dto/image-analysis.dto.js';
 import { CloudProvider } from '../cloud-provider.interface.js';
 
 /**

@@ -1,9 +1,9 @@
-import { logger } from '@/lib/logger.js';
+import { logger } from '@shared/logger.js';
 import {
     AnalyzeImageRequest,
     DetectedPartLabel,
     ImageAnalysisResult
-} from '@/types/dto/image-analysis.dto.js';
+} from '@types/dto/image-analysis.dto.js';
 import {
     BoundingBox,
     DetectDocumentTextCommand,
