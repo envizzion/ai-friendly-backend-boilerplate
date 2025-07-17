@@ -24,7 +24,9 @@ const envSchema = z.object({
   CDN_URL_EXPIRY_HOURS: z.string().default('24'), // CDN URL expiration time in hours
   GCS_BUCKET_NAME: z.string(), // Google Cloud Storage bucket name
 
-  // AWS configuration (optional, will use AWS_* environment variables if not provided)
+  // AWS configuration (optional)
+  AWS_ACCESS_KEY_ID: z.string().optional(), // AWS access key ID
+  AWS_SECRET_ACCESS_KEY: z.string().optional(), // AWS secret access key
   AWS_REGION: z.string().optional(), // AWS region (default: us-east-1)
 
   // GCP configuration (optional, will use GOOGLE_* environment variables if not provided)

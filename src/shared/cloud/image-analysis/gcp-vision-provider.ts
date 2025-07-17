@@ -1,9 +1,8 @@
 import { logger } from '@shared/logger.js';
 import {
     AnalyzeImageRequest,
-    DetectedPartLabel,
     ImageAnalysisResult
-} from '@types/dto/image-analysis.dto.js';
+} from './image-analysis-provider.interface.js';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { GCPConfig } from '../cloud-provider.interface.js';
 import { GCPCloudProvider, GCPCredentials } from '../gcp-cloud-provider.js';
@@ -78,16 +77,19 @@ export class GcpVisionProvider implements ImageAnalysisProvider {
             throw new Error('GCP Vision provider not initialized');
         }
 
-        if (!request.imageUrl) {
-            throw new Error('Image URL is required for analysis');
+        if (!request.imageBase64) {
+            throw new Error('Base64 image data is required for analysis');
         }
 
         const startTime = Date.now();
 
         try {
+            // Convert base64 to buffer
+            const imageBuffer = Buffer.from(request.imageBase64, 'base64');
+            
             // Call Google Cloud Vision API
             const [result] = await this.client.textDetection({
-                image: { source: { imageUri: request.imageUrl } },
+                image: { content: imageBuffer },
                 imageContext: {
                     textDetectionParams: {
                         enableTextDetectionConfidenceScore: true,
@@ -101,31 +103,24 @@ export class GcpVisionProvider implements ImageAnalysisProvider {
             // Skip the first annotation as it contains the full text
             const individualTexts = detections.slice(1);
 
-            const detectedLabels: DetectedPartLabel[] = [];
+            const textAnnotations = [];
 
             for (const detection of individualTexts) {
                 const text = detection.description?.trim();
                 if (!text) continue;
 
-                // Filter only numbers if requested
-                if (request.filterOnlyNumbers !== false) {
-                    if (!/^\d+$/.test(text)) continue;
-                }
-
                 // Check confidence threshold
                 const confidence = detection.confidence || 0;
-                if (confidence < (request.minConfidence || 0.5)) continue;
 
                 // Extract bounding box coordinates
                 const vertices = detection.boundingPoly?.vertices;
                 if (!vertices || vertices.length < 4) continue;
 
-                const coordinates = this.calculateBoundingBox(vertices);
-
-                detectedLabels.push({
-                    label: text,
-                    value: Number(text),
-                    coordinates,
+                textAnnotations.push({
+                    description: text,
+                    boundingPoly: {
+                        vertices: this.convertToVertices(vertices)
+                    },
                     confidence
                 });
             }
@@ -133,42 +128,29 @@ export class GcpVisionProvider implements ImageAnalysisProvider {
             const processingTime = Date.now() - startTime;
 
             return {
-                imageUrl: request.imageUrl,
-                detectedLabels,
-                totalLabelsFound: detectedLabels.length,
-                processingTime
+                success: true,
+                textAnnotations
             };
 
         } catch (error) {
             logger.error('GCP Vision analysis failed:', error);
-            throw new Error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return {
+                success: false,
+                textAnnotations: [],
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
         }
     }
 
     /**
-     * Calculate bounding box from vertices
+     * Convert vertices to the expected format
      * @param vertices - Vertex coordinates
-     * @returns Normalized bounding box
+     * @returns Array of vertices
      */
-    private calculateBoundingBox(vertices: Array<{ x?: number | null; y?: number | null }>): {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } {
-        const xCoords = vertices.map(v => v.x ?? 0);
-        const yCoords = vertices.map(v => v.y ?? 0);
-
-        const minX = Math.min(...xCoords);
-        const maxX = Math.max(...xCoords);
-        const minY = Math.min(...yCoords);
-        const maxY = Math.max(...yCoords);
-
-        return {
-            x: minX,
-            y: minY,
-            width: maxX - minX,
-            height: maxY - minY
-        };
+    private convertToVertices(vertices: Array<{ x?: number | null; y?: number | null }>): Array<{ x: number; y: number }> {
+        return vertices.map(v => ({
+            x: v.x ?? 0,
+            y: v.y ?? 0
+        }));
     }
 } 

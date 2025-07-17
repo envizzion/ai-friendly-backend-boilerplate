@@ -1,5 +1,29 @@
-import { PartsCatalogAnalysisRequest, PartsCatalogAnalysisResult } from '@/types/dto/ai-analysis.dto.js';
 import { CloudProvider } from '../cloud-provider.interface.js';
+
+// TODO: Move these types to shared types when migrating AI analysis feature
+export interface PartsCatalogAnalysisRequest {
+  imageBase64: string;
+  brand: string;
+  model: string;
+  year?: number;
+  maxPartCount?: number;
+}
+
+export interface PartsCatalogAnalysisResult {
+  success: boolean;
+  parts: Array<{
+    partName: string;
+    partNumber: string;
+    category: string;
+    price?: number;
+    availability?: boolean;
+    description?: string;
+  }>;
+  totalParts: number;
+  confidence: number;
+  processingTime?: number;
+  error?: string;
+}
 
 /**
  * Supported AI analysis provider types

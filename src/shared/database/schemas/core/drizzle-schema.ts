@@ -10,7 +10,7 @@ import {
     TRIM_LEVELS,
     VEHICLE_SEGMENTS,
     VEHICLE_STATUS,
-} from '@shared/types/enums.js';
+} from '@shared/types/enums.ts';
 import { sql } from 'drizzle-orm';
 import {
     boolean,

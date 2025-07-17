@@ -14,6 +14,7 @@ import env from '@shared/env.js';
 import { logger } from '@shared/logger.js';
 import { closeQueue, registerTaskProcessor, startWorker } from '@shared/messaging/queue.js';
 import { WelcomeEmailTask } from '@shared/messaging/tasks/welcome-email.task.js';
+import { CloudProviderFactory } from '@shared/cloud/index.js';
 import { api } from './routes.js';
 
 const isDev = env.NODE_ENV !== 'production';
@@ -21,6 +22,7 @@ const isDev = env.NODE_ENV !== 'production';
 class Server {
   private app: OpenAPIHono;
   private workerStarted = false;
+  private cloudProviders: any = {};
 
   constructor() {
     this.app = new OpenAPIHono();
@@ -68,6 +70,9 @@ class Server {
 
     // Static files
     this.app.use('/static/*', serveStatic({ root: './' }));
+
+    // Initialize cloud providers
+    await this.initializeCloudProviders();
 
     // Initialize background processing
     this.initializeWorker();
@@ -141,6 +146,30 @@ class Server {
     }
   }
 
+  private async initializeCloudProviders() {
+    try {
+      // Initialize based on available environment variables
+      if (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.AWS_REGION) {
+        this.cloudProviders.aws = await CloudProviderFactory.initializeAWS();
+        logger.info('AWS cloud providers initialized');
+      }
+
+      if (env.GOOGLE_APPLICATION_CREDENTIALS && env.GCP_PROJECT_ID) {
+        this.cloudProviders.gcp = await CloudProviderFactory.initializeGCP();
+        logger.info('GCP cloud providers initialized');
+      }
+
+      if (Object.keys(this.cloudProviders).length === 0) {
+        logger.warn('No cloud providers initialized - check environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, GOOGLE_APPLICATION_CREDENTIALS, GCP_PROJECT_ID)');
+      } else {
+        logger.info('Cloud providers initialization complete');
+      }
+    } catch (error) {
+      logger.error('Failed to initialize cloud providers:', error);
+      // Don't fail server startup, just log the error
+    }
+  }
+
   private initializeWorker() {
     if (this.workerStarted) {
       return;
@@ -161,6 +190,10 @@ class Server {
 
   public getApp() {
     return this.app;
+  }
+
+  public getCloudProviders() {
+    return this.cloudProviders;
   }
 
   public async start() {

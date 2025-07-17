@@ -8,8 +8,7 @@ export const connection = new IORedis.default({
   host: env.REDIS_HOST,
   port: parseInt(env.REDIS_PORT),
   password: env.REDIS_PASSWORD,
-  maxRetriesPerRequest: 3,
-  retryDelayOnFailover: 100,
+  maxRetriesPerRequest: 3
 });
 
 // Connection event handlers

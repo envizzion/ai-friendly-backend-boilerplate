@@ -1,17 +1,16 @@
 import { logger } from '@shared/logger.js';
 import {
-    AnalyzeImageRequest,
-    DetectedPartLabel,
-    ImageAnalysisResult
-} from '@types/dto/image-analysis.dto.js';
-import {
     BoundingBox,
     DetectDocumentTextCommand,
     TextractClient
 } from '@aws-sdk/client-textract';
 import { AWSCloudProvider, AWSCredentials } from '../aws-cloud-provider.js';
 import { AWSConfig } from '../cloud-provider.interface.js';
-import { ImageAnalysisProvider } from './image-analysis-provider.interface.js';
+import { 
+    ImageAnalysisProvider, 
+    AnalyzeImageRequest, 
+    ImageAnalysisResult 
+} from './image-analysis-provider.interface.js';
 
 /**
  * AWS Textract implementation of ImageAnalysisProvider
@@ -86,16 +85,13 @@ export class AwsTextractProvider implements ImageAnalysisProvider {
             throw new Error('AWS Textract provider not initialized');
         }
 
-        if (!request.imageUrl) {
-            throw new Error('Image URL is required for analysis');
+        if (!request.imageBase64) {
+            throw new Error('Base64 image data is required for analysis');
         }
 
-        const startTime = Date.now();
-
         try {
-            // AWS Textract requires the image to be in S3 or as bytes
-            // For URLs, we need to fetch the image first
-            const imageBytes = await this.fetchImageAsBytes(request.imageUrl);
+            // Convert base64 to bytes for AWS Textract
+            const imageBytes = Buffer.from(request.imageBase64, 'base64');
 
             // Call AWS Textract
             const command = new DetectDocumentTextCommand({
@@ -110,83 +106,63 @@ export class AwsTextractProvider implements ImageAnalysisProvider {
             // Filter for WORD blocks (similar to individual text elements)
             const wordBlocks = blocks.filter(block => block.BlockType === 'WORD');
 
-            const detectedLabels: DetectedPartLabel[] = [];
+            const textAnnotations = [];
 
             for (const block of wordBlocks) {
                 const text = block.Text?.trim();
                 if (!text) continue;
 
-                // Filter only numbers if requested
-                if (request.filterOnlyNumbers !== false) {
-                    if (!/^\d+$/.test(text)) continue;
-                }
-
-                // Check confidence threshold
-                const confidence = block.Confidence ? block.Confidence / 100 : 0;
-                if (confidence < (request.minConfidence || 0.5)) continue;
-
                 // Extract bounding box coordinates
                 const boundingBox = block.Geometry?.BoundingBox;
                 if (!boundingBox) continue;
 
-                const coordinates = this.calculateBoundingBox(boundingBox);
+                const vertices = this.convertBoundingBoxToVertices(boundingBox);
 
-                detectedLabels.push({
-                    label: text,
-                    value: Number(text),
-                    coordinates,
-                    confidence
+                textAnnotations.push({
+                    description: text,
+                    boundingPoly: {
+                        vertices
+                    },
+                    confidence: block.Confidence ? block.Confidence / 100 : 0
                 });
             }
-            detectedLabels.sort((a, b) => b.value - a.value);
-            const processingTime = Date.now() - startTime;
 
             return {
-                imageUrl: request.imageUrl,
-                detectedLabels,
-                totalLabelsFound: detectedLabels.length,
-                processingTime
+                success: true,
+                textAnnotations
             };
 
         } catch (error) {
             logger.error('AWS Textract analysis failed:', error);
-            throw new Error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return {
+                success: false,
+                textAnnotations: [],
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
         }
     }
 
     /**
-     * Fetch image from URL and convert to bytes
-     * @param url - Image URL
-     * @returns Promise<Uint8Array>
-     */
-    private async fetchImageAsBytes(url: string): Promise<Uint8Array> {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.statusText}`);
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        return new Uint8Array(arrayBuffer);
-    }
-
-    /**
-     * Calculate bounding box from AWS Textract BoundingBox
+     * Convert AWS Textract BoundingBox to vertices format
      * @param boundingBox - AWS Textract BoundingBox
-     * @returns Normalized bounding box
+     * @returns Array of vertices
      */
-    private calculateBoundingBox(boundingBox: BoundingBox): {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } {
+    private convertBoundingBoxToVertices(boundingBox: BoundingBox): Array<{ x: number; y: number }> {
         // AWS Textract returns normalized coordinates (0-1)
-        // We need to convert them to absolute pixel values
-        // For this example, we'll keep them normalized and let the consumer scale them
-        return {
-            x: boundingBox.Left || 0,
-            y: boundingBox.Top || 0,
-            width: boundingBox.Width || 0,
-            height: boundingBox.Height || 0
-        };
+        const left = boundingBox.Left || 0;
+        const top = boundingBox.Top || 0;
+        const width = boundingBox.Width || 0;
+        const height = boundingBox.Height || 0;
+
+        // Convert to vertices (assuming 1000x1000 pixel image for now)
+        const imageWidth = 1000;
+        const imageHeight = 1000;
+
+        return [
+            { x: left * imageWidth, y: top * imageHeight },
+            { x: (left + width) * imageWidth, y: top * imageHeight },
+            { x: (left + width) * imageWidth, y: (top + height) * imageHeight },
+            { x: left * imageWidth, y: (top + height) * imageHeight }
+        ];
     }
 } 

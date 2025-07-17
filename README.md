@@ -199,6 +199,7 @@ The manufacturer feature is fully implemented and serves as the template for all
 - ✅ **Static File Serving** - Assets served from `/static/*`
 - ✅ **CORS & Security** - Production-ready middleware stack
 - ✅ **Auto-Generated Docs** - OpenAPI spec exported to `/openapi/`
+- ✅ **Cloud Provider System** - AWS & GCP integration for storage, AI, and image analysis
 
 ## 🔥 AI Development Benefits
 
@@ -318,10 +319,18 @@ shoppingCart.vendorInventoryPublicId → vendor.vendorInventory.publicId
 - **AI-Friendly**: Crystal clear where each feature belongs
 - **Team Ready**: Perfect for parallel development
 
-## 📚 API Documentation
+## 📚 Documentation
 
+### **API Documentation**
 - **Swagger UI**: `http://localhost:3000/doc`
 - **OpenAPI JSON**: `http://localhost:3000/openapi.json`
+
+### **Cloud Providers**
+- **Cloud Providers Guide**: [`CLOUD_PROVIDERS.md`](./CLOUD_PROVIDERS.md) - Comprehensive guide to AWS & GCP integration
+- **Storage Management**: File uploads, CDN URLs, and bucket operations
+- **AI Analysis**: Parts catalog analysis with Google Gemini AI
+- **Image Processing**: Text extraction with AWS Textract and Google Vision
+- **Provider Factory**: Easy initialization and management of cloud services
 
 ## 🔧 Development Guide
 
