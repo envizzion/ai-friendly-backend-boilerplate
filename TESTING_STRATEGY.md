@@ -24,9 +24,9 @@ This document outlines the comprehensive testing strategy for the Parts Backend 
 - **Why**: Native Hono support, type-safe request/response testing
 - **Benefits**: No need for supertest, seamless integration
 
-### Database Testing: **Testcontainers**
-- **@testcontainers/postgresql**: Real PostgreSQL instances for integration tests
-- **Why**: Tests actual database behavior, supports Drizzle + Kysely stack
+### Database Testing: **Existing PostgreSQL Container**
+- **Your setup**: Uses existing PostgreSQL container with temporary test databases
+- **Why**: Fast setup, real database behavior, supports Drizzle + Kysely stack
 - **Alternative for unit tests**: Mock repositories with vitest
 
 ### Mocking & Test Data
@@ -211,7 +211,16 @@ export const manufacturerFactory = {
 
 ## 🚀 Implementation Guide
 
-### 1. Package.json Scripts
+### 1. Prerequisites
+
+**PostgreSQL Setup**: Your existing PostgreSQL container must be running:
+- Host: localhost
+- Port: 5432 (default)
+- User: root
+- Password: password
+- Database: parts-db-new
+
+### 2. Package.json Scripts
 
 ```json
 {
@@ -226,7 +235,7 @@ export const manufacturerFactory = {
 }
 ```
 
-### 2. Vitest Configuration
+### 3. Vitest Configuration
 
 ```typescript
 // vitest.config.ts
@@ -258,43 +267,45 @@ export default defineConfig({
 });
 ```
 
-### 3. Test Helpers
+### 4. Test Helpers
 
 ```typescript
 // tests/helpers/test-database.ts
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import * as coreSchema from '@/shared/database/schemas/core/drizzle-schema';
+import { randomBytes } from 'crypto';
 
-let container: PostgreSqlContainer;
-let sql: postgres.Sql;
-let db: ReturnType<typeof drizzle>;
+// Uses your existing PostgreSQL container
+const DEFAULT_PG_URL = process.env.TEST_DATABASE_URL || 'postgres://root:password@localhost/parts-db-new';
 
 export async function setupTestDatabase() {
-  container = await new PostgreSqlContainer()
-    .withDatabase('test_db')
-    .withUsername('test_user')
-    .withPassword('test_pass')
-    .start();
-
-  const connectionString = container.getConnectionUri();
-  sql = postgres(connectionString);
-  db = drizzle(sql);
+  // Generate unique database name for this test run
+  const testDbName = `test_${randomBytes(8).toString('hex')}`;
+  
+  // Connect to admin database to create test database
+  const adminSql = postgres(DEFAULT_PG_URL, { max: 1 });
+  await adminSql.unsafe(`CREATE DATABASE "${testDbName}"`);
+  
+  // Connect to the new test database
+  const testUrl = DEFAULT_PG_URL.replace(/\/[^/]*$/, `/${testDbName}`);
+  const sql = postgres(testUrl, { max: 1 });
+  const db = drizzle(sql, { schema: coreSchema });
 
   // Run migrations
   await migrate(db, { migrationsFolder: './src/shared/database/migrations' });
 
-  return { db, sql };
+  return { db, sql, connectionString: testUrl };
 }
 
 export async function cleanupTestDatabase() {
-  await sql.end();
-  await container.stop();
-}
-
-export function getTestDb() {
-  return db;
+  // Database is automatically dropped after tests
+  if (sql) await sql.end();
+  if (adminSql && testDbName) {
+    await adminSql.unsafe(`DROP DATABASE IF EXISTS "${testDbName}"`);
+    await adminSql.end();
+  }
 }
 ```
 
@@ -389,20 +400,27 @@ jobs:
 
 ## 🎉 Getting Started
 
-1. **Install dependencies**:
+1. **Ensure PostgreSQL is running**:
+   ```bash
+   # Your existing PostgreSQL container should be running on localhost:5432
+   # with user: root, password: password, database: parts-db-new
+   ```
+
+2. **Install dependencies** (already done):
    ```bash
    pnpm add -D vitest @vitest/ui @vitest/coverage-v8
    pnpm add -D @faker-js/faker @anatine/zod-mock
-   pnpm add -D @testcontainers/postgresql
    ```
 
-2. **Create test structure**:
+3. **Run tests**:
    ```bash
-   mkdir -p tests/{unit,integration,fixtures,helpers}
-   ```
-
-3. **Write your first test**:
-   ```bash
+   # Unit tests (fast, no database required)
+   pnpm test:unit
+   
+   # Database integration tests (requires PostgreSQL)
+   pnpm test tests/integration/database/
+   
+   # Watch mode for development
    pnpm test:watch
    ```
 
@@ -410,5 +428,16 @@ jobs:
    ```bash
    pnpm test:coverage
    ```
+
+## 🔧 VS Code Setup
+
+If you see import errors for path aliases like `@/features/...` in test files:
+
+1. **Restart TypeScript Server**: `Cmd+Shift+P` → "TypeScript: Restart TS Server"
+2. **Or reload window**: `Cmd+Shift+P` → "Developer: Reload Window"
+
+See `VSCODE_SETUP.md` for detailed troubleshooting.
+
+---
 
 This testing strategy provides a solid foundation for maintaining high-quality code while supporting rapid development in our domain-based architecture.

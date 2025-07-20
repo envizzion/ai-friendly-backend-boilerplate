@@ -1,9 +1,9 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import * as coreSchema from '@/shared/database/schemas/core/drizzle-schema';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { randomBytes } from 'crypto';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
 
 let sql: postgres.Sql | null = null;
 let db: PostgresJsDatabase<typeof coreSchema> | null = null;
@@ -16,14 +16,14 @@ const DEFAULT_PG_URL = process.env.TEST_DATABASE_URL || 'postgres://root:passwor
 export async function setupTestDatabase() {
   // Generate unique database name for this test run
   testDbName = `test_${randomBytes(8).toString('hex')}`;
-  
+
   // Connect to admin database to create test database
   adminSql = postgres(DEFAULT_PG_URL, { max: 1 });
-  
+
   try {
     // Create test database
     await adminSql.unsafe(`CREATE DATABASE "${testDbName}"`);
-    
+
     // Connect to the new test database
     const testUrl = DEFAULT_PG_URL.replace(/\/[^/]*$/, `/${testDbName}`);
     sql = postgres(testUrl, { max: 1 });
@@ -45,7 +45,7 @@ export async function cleanupTestDatabase() {
     if (sql) {
       await sql.end();
     }
-    
+
     if (adminSql && testDbName) {
       // Drop test database
       await adminSql.unsafe(`DROP DATABASE IF EXISTS "${testDbName}"`);
@@ -78,7 +78,7 @@ export function getTestSql() {
 // Helper to clean all tables
 export async function cleanAllTables() {
   const db = getTestDb();
-  
+
   // Delete in correct order to respect foreign keys
   await db.delete(coreSchema.modelVariations).execute();
   await db.delete(coreSchema.models).execute();
