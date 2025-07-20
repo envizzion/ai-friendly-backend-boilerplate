@@ -1,4 +1,4 @@
-import * as coreSchema from '@/shared/database/schemas/core/drizzle-schema';
+import * as coreSchema from '@core-db-schemas/drizzle-schema.js';
 import { randomBytes } from 'crypto';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { drizzle } from 'drizzle-orm/postgres-js';

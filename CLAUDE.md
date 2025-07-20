@@ -182,6 +182,83 @@ pnpm db:generate-all-types      # Generate all types
 - Schemas: `{feature}.schemas.ts`
 - Tests: `{feature}.test.ts`, `{feature}.service.test.ts`
 
+### **Import Alias Best Practices**
+Always use the most specific path alias available to keep imports short and maintainable:
+
+**❌ Avoid generic aliases when specific ones exist:**
+```typescript
+// Don't use:
+import { manufacturers } from '@/shared/database/schemas/core/drizzle-schema';
+import { ManufacturerService } from '@/features/core/manufacturer/manufacturer.service';
+import { CreateManufacturerDto } from '@/schemas/core/manufacturer.schemas';
+```
+
+**✅ Use specific aliases:**
+```typescript
+// Do use:
+import { manufacturers } from '@core-db-schemas/drizzle-schema';
+import { ManufacturerService } from '@core/manufacturer/manufacturer.service';
+import { CreateManufacturerDto } from '@schemas/core/manufacturer.schemas';
+```
+
+**Available Path Aliases (from most to least specific):**
+- `@core-db-schemas/*` → `src/shared/database/schemas/core/*`
+- `@vendor-db-schemas/*` → `src/shared/database/schemas/vendor/*`
+- `@customer-db-schemas/*` → `src/shared/database/schemas/customer/*`
+- `@core/*` → `src/features/core/*`
+- `@vendor/*` → `src/features/vendor/*`
+- `@customer/*` → `src/features/customer/*`
+- `@common/*` → `src/features/common/*`
+- `@schemas/*` → `src/schemas/*`
+- `@routes/*` → `src/routes/*`
+- `@database/*` → `src/shared/database/*`
+- `@shared/*` → `src/shared/*`
+- `@config/*` → `src/config/*`
+- `@utils/*` → `src/shared/utils/*`
+- `@types/*` → `src/shared/types/*`
+- `@tests/*` → `tests/*`
+
+**Never use `@/` prefix** - always use the specific alias that best matches your import path.
+
+### **ES Module Import Requirements**
+**IMPORTANT: This project uses Native ES Modules. All local imports MUST include `.js` extensions.**
+
+Based on our module system evaluation (see `docs/MODULE_SYSTEM_COMPARISON.md`), we use Native ES Modules for:
+- Superior debugging experience
+- Instant code reflection during development
+- Simpler operational complexity
+- Future flexibility
+
+**❌ Incorrect (will cause import errors):**
+```typescript
+import { ManufacturerService } from '@core/manufacturer/manufacturer.service';
+import { manufacturers } from '@core-db-schemas/drizzle-schema';
+vi.mock('@core/manufacturer/manufacturer.repository');
+```
+
+**✅ Correct (ALWAYS use .js extension):**
+```typescript
+import { ManufacturerService } from '@core/manufacturer/manufacturer.service.js';
+import { manufacturers } from '@core-db-schemas/drizzle-schema.js';
+vi.mock('@core/manufacturer/manufacturer.repository.js');
+```
+
+**Import Rules:**
+1. **All local imports** must end with `.js`
+2. **All relative imports** must end with `.js`
+3. **All alias imports** (`@core/*`, `@schemas/*`, etc.) must end with `.js`
+4. **Mock imports** in tests must end with `.js`
+5. **Only node_modules imports** don't need extensions
+
+**Why .js extensions?**
+- Node.js ES modules require explicit file extensions
+- TypeScript compiles `.ts` files to `.js`, so imports must reference the output extension
+- This is the official Node.js standard for ES modules
+- Prevents "Cannot find module" errors in VS Code and runtime
+- Aligns with our VM deployment strategy and development priorities
+
+**Remember:** If you forget the `.js` extension, the import will fail at runtime!
+
 ### **Database Strategy**
 - Single database with domain-separated schemas
 - Drizzle ORM for schema definition
@@ -196,11 +273,12 @@ pnpm db:generate-all-types      # Generate all types
 
 ## 🚨 Important Notes
 
-1. **Always use the manufacturer feature as your template** - it's the complete reference implementation
-2. **Follow the domain-based organization** - don't create features outside the domain structure
-3. **Include tests for new features** - both unit and integration tests
-4. **Use Zod schemas for all validation** - don't create manual type definitions
-5. **Test database setup requires existing PostgreSQL** - connection details in `.env.test`
+1. **ALWAYS use `.js` extensions in imports** - This project uses Native ES Modules (see ES Module Import Requirements above)
+2. **Always use the manufacturer feature as your template** - it's the complete reference implementation
+3. **Follow the domain-based organization** - don't create features outside the domain structure
+4. **Include tests for new features** - both unit and integration tests
+5. **Use Zod schemas for all validation** - don't create manual type definitions
+6. **Test database setup requires existing PostgreSQL** - connection details in `.env.test`
 
 ## 📋 Checklist for New Features
 

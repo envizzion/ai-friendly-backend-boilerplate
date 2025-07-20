@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { testApp } from '@tests/helpers/test-server';
-import { setupTestDatabase, cleanupTestDatabase, cleanAllTables } from '@tests/helpers/test-database';
-import { seedManufacturer, seedManufacturers } from '@tests/fixtures/test-data';
-import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory';
-import type { ManufacturerListResponse, ManufacturerResponse } from '@/schemas/core/manufacturer.schemas';
+import { testApp } from '@tests/helpers/test-server.js';
+import { setupTestDatabase, cleanupTestDatabase, cleanAllTables } from '@tests/helpers/test-database.js';
+import { seedManufacturer, seedManufacturers } from '@tests/fixtures/test-data.js';
+import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory.js';
+import type { ManufacturerListResponse, ManufacturerResponse } from '@schemas/core/manufacturer.schemas.js';
 
 describe('Manufacturer API Integration Tests', () => {
   beforeAll(async () => {

@@ -3,8 +3,8 @@ import {
   type CreateManufacturerDto,
   type UpdateManufacturerDto,
   type ManufacturerResponse
-} from '@/schemas/core/manufacturer.schemas';
-import { generatePublicId, generateUuid } from '@/shared/utils/string';
+} from '@schemas/core/manufacturer.schemas.js';
+import { generatePublicId, generateUuid } from '@shared/utils/string.js';
 
 export const manufacturerFactory = {
   // Build input for creating a manufacturer

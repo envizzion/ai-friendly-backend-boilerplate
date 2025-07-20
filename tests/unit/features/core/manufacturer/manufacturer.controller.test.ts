@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { ManufacturerController } from '@/features/core/manufacturer/manufacturer.controller';
-import { ManufacturerService } from '@/features/core/manufacturer/manufacturer.service';
-import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory';
+import { ManufacturerController } from '@core/manufacturer/manufacturer.controller.js';
+import { ManufacturerService } from '@core/manufacturer/manufacturer.service.js';
+import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory.js';
 import { Context } from 'hono';
 import { ZodError } from 'zod';
 
 // Mock the service
-vi.mock('@/features/core/manufacturer/manufacturer.service');
+vi.mock('@core/manufacturer/manufacturer.service.js');
 
 describe('ManufacturerController', () => {
   let controller: ManufacturerController;

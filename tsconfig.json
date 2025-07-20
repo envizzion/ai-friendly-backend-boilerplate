@@ -36,6 +36,12 @@
       "@features/*": [
         "src/features/*"
       ],
+      "@routes/*": [
+        "src/routes/*"
+      ],
+      "@schemas/*": [
+        "src/schemas/*"
+      ],
       "@core/*": [
         "src/features/core/*"
       ],

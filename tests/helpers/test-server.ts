@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createCoreRouter } from '@/routes/core.routes';
+import { createCoreRouter } from '@routes/core.routes.js';
 import type { Context } from 'hono';
 
 // Create a test app instance

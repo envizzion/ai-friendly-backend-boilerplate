@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { setupTestDatabase, cleanupTestDatabase, cleanAllTables, getTestDb } from '@tests/helpers/test-database';
-import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory';
-import { manufacturers } from '@/shared/database/schemas/core/drizzle-schema';
+import { setupTestDatabase, cleanupTestDatabase, cleanAllTables, getTestDb } from '@tests/helpers/test-database.js';
+import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory.js';
+import { manufacturers } from '@core-db-schemas/drizzle-schema.js';
 import { eq } from 'drizzle-orm';
 
 describe('Manufacturer Database Integration Tests', () => {

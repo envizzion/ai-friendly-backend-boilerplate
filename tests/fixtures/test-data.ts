@@ -1,6 +1,6 @@
-import { manufacturers } from '@/shared/database/schemas/core/drizzle-schema';
-import { getTestDb } from '@tests/helpers/test-database';
-import { manufacturerFactory } from './factories/manufacturer.factory';
+import { manufacturers } from '@core-db-schemas/drizzle-schema.js';
+import { getTestDb } from '@tests/helpers/test-database.js';
+import { manufacturerFactory } from './factories/manufacturer.factory.js';
 
 // Seed manufacturers for testing
 export async function seedManufacturers(count: number = 5) {

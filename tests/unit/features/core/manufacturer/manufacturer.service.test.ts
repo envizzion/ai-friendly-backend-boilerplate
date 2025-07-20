@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { ManufacturerService } from '@/features/core/manufacturer/manufacturer.service';
-import { ManufacturerRepository } from '@/features/core/manufacturer/manufacturer.repository';
-import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory';
-import type { CreateManufacturerDto, UpdateManufacturerDto } from '@/schemas/core/manufacturer.schemas';
+import { ManufacturerService } from '@core/manufacturer/manufacturer.service.js';
+import { ManufacturerRepository } from '@core/manufacturer/manufacturer.repository.js';
+import { manufacturerFactory } from '@tests/fixtures/factories/manufacturer.factory.js';
+import type { CreateManufacturerDto, UpdateManufacturerDto } from '@schemas/core/manufacturer.schemas.js';
 
 // Mock the repository
-vi.mock('@/features/core/manufacturer/manufacturer.repository');
+vi.mock('@core/manufacturer/manufacturer.repository.js');
 
 describe('ManufacturerService', () => {
   let service: ManufacturerService;
