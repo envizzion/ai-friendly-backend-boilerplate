@@ -8,18 +8,20 @@ This approach maintains complete isolation between database sections while prese
 
 ```
 src/shared/database/
-├── core/
-│   ├── drizzle-schema.ts       # ✅ EXISTING - keep as-is
-│   ├── generated.ts            # ✅ EXISTING - keep as-is  
-│   └── migrations/             # ✅ EXISTING core migrations
-├── vendor/
-│   ├── drizzle-schema.ts       # 🆕 NEW - vendor-specific tables
-│   ├── generated.ts            # 🆕 NEW - vendor Kysely types
-│   └── migrations/             # 🆕 NEW vendor migrations
-├── customer/
-│   ├── drizzle-schema.ts       # 🆕 NEW - customer-specific tables
-│   ├── generated.ts            # 🆕 NEW - customer Kysely types
-│   └── migrations/             # 🆕 NEW customer migrations
+├── schemas/                    # Section-specific schema definitions
+│   ├── core/
+│   │   ├── drizzle-schema.ts   # ✅ EXISTING - core tables
+│   │   └── kysely-types.ts     # ✅ EXISTING - core Kysely types (renamed from generated.ts)
+│   ├── vendor/
+│   │   ├── drizzle-schema.ts   # 🆕 NEW - vendor-specific tables
+│   │   └── kysely-types.ts     # 🆕 NEW - vendor Kysely types
+│   └── customer/
+│       ├── drizzle-schema.ts   # 🆕 NEW - customer-specific tables
+│       └── kysely-types.ts     # 🆕 NEW - customer Kysely types
+├── migrations/                 # 📁 SINGLE unified migrations directory
+│   ├── 0001_initial_core.sql   # Existing core migrations
+│   ├── 0002_add_vendor.sql     # New vendor tables
+│   └── 0003_add_customer.sql   # New customer tables
 └── connections/
     ├── core.ts                 # Core DB connection
     ├── vendor.ts               # Vendor DB connection
@@ -81,9 +83,9 @@ interface CustomerDB {
 // src/shared/database/connections/core.ts
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '../core/drizzle-schema';
+import * as schema from '../schemas/core/drizzle-schema';
 
-const coreClient = postgres(process.env.CORE_DATABASE_URL!);
+const coreClient = postgres(process.env.DATABASE_URL!);
 export const coreDb = drizzle(coreClient, { schema });
 
 export type CoreDB = typeof coreDb;
@@ -94,9 +96,9 @@ export type CoreDB = typeof coreDb;
 // src/shared/database/connections/vendor.ts
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '../vendor/drizzle-schema';
+import * as schema from '../schemas/vendor/drizzle-schema';
 
-const vendorClient = postgres(process.env.VENDOR_DATABASE_URL!);
+const vendorClient = postgres(process.env.DATABASE_URL!);
 export const vendorDb = drizzle(vendorClient, { schema });
 
 export type VendorDB = typeof vendorDb;

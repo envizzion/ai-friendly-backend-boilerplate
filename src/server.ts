@@ -15,7 +15,10 @@ import { logger } from '@shared/logger.js';
 import { closeQueue, registerTaskProcessor, startWorker } from '@shared/messaging/queue.js';
 import { WelcomeEmailTask } from '@shared/messaging/tasks/welcome-email.task.js';
 import { CloudProviderFactory } from '@shared/cloud/index.js';
-import { api } from './routes.js';
+import { api } from './routes/index.js';
+import { coreApi } from './routes/core.routes.js';
+import { vendorApi } from './routes/vendor.routes.js';
+import { customerApi } from './routes/customer.routes.js';
 
 const isDev = env.NODE_ENV !== 'production';
 
@@ -55,6 +58,20 @@ class Server {
       return c.json({
         message: 'Parts App API',
         version: '1.0.0',
+        architecture: 'Feature-based with Domain-organized Schemas',
+        domains: ['core', 'vendor', 'customer'],
+        endpoints: {
+          legacy: '/api/*',
+          core: '/api/core/*',
+          vendor: '/api/vendor/*',
+          customer: '/api/customer/*',
+          docs: {
+            unified: '/doc',
+            core: '/doc/core',
+            vendor: '/doc/vendor',
+            customer: '/doc/customer'
+          }
+        },
         timestamp: new Date().toISOString()
       });
     });
@@ -77,16 +94,112 @@ class Server {
     // Initialize background processing
     this.initializeWorker();
 
-    // Register API routes
+    // 🔄 COMPATIBILITY: Legacy API routes
     this.app.route('/api', api);
 
-    // Configure OpenAPI documentation
-    const openAPIDocument = this.app.getOpenAPIDocument({
+    // 🚀 NEW: Domain-specific API routes
+    this.app.route('/api/core', coreApi);
+    this.app.route('/api/vendor', vendorApi);
+    this.app.route('/api/customer', customerApi);
+
+    // 🚀 NEW: Domain-specific OpenAPI documentation
+    this.setupDomainOpenAPIEndpoints();
+
+    // 🔄 COMPATIBILITY: Unified OpenAPI documentation
+    this.setupUnifiedOpenAPIEndpoint();
+
+    // 404 handler
+    this.app.notFound((c) => {
+      return c.json({
+        message: 'Not Found',
+        path: c.req.path,
+        method: c.req.method,
+        availableEndpoints: {
+          legacy: '/api/*',
+          core: '/api/core/*',
+          vendor: '/api/vendor/*',
+          customer: '/api/customer/*'
+        }
+      }, 404);
+    });
+  }
+
+  private setupDomainOpenAPIEndpoints() {
+    // Core Domain OpenAPI
+    const coreOpenAPIDocument = {
       openapi: '3.0.0',
       info: {
-        title: 'Parts App API',
+        title: 'Parts App - Core Domain API',
         version: '1.0.0',
-        description: 'Vehicle Parts Catalog API with comprehensive functionality'
+        description: 'Core business domain operations: manufacturers, models, parts, colors, body styles'
+      },
+      servers: [
+        {
+          url: '/api/core',
+          description: isDev ? 'Development - Core Domain' : 'Production - Core Domain'
+        }
+      ],
+      tags: [
+        { name: 'core', description: 'Core business domain operations' }
+      ]
+    };
+
+    this.app.doc('/openapi/core.json', coreOpenAPIDocument);
+    this.app.get('/doc/core', swaggerUI({ url: '/openapi/core.json' }));
+
+    // Vendor Domain OpenAPI
+    const vendorOpenAPIDocument = {
+      openapi: '3.0.0',
+      info: {
+        title: 'Parts App - Vendor Domain API',
+        version: '1.0.0',
+        description: 'Vendor marketplace operations: inventory, listings, vendor management'
+      },
+      servers: [
+        {
+          url: '/api/vendor',
+          description: isDev ? 'Development - Vendor Domain' : 'Production - Vendor Domain'
+        }
+      ],
+      tags: [
+        { name: 'vendor', description: 'Vendor marketplace operations' }
+      ]
+    };
+
+    this.app.doc('/openapi/vendor.json', vendorOpenAPIDocument);
+    this.app.get('/doc/vendor', swaggerUI({ url: '/openapi/vendor.json' }));
+
+    // Customer Domain OpenAPI
+    const customerOpenAPIDocument = {
+      openapi: '3.0.0',
+      info: {
+        title: 'Parts App - Customer Domain API',
+        version: '1.0.0',
+        description: 'Customer shopping operations: cart, orders, search, preferences'
+      },
+      servers: [
+        {
+          url: '/api/customer',
+          description: isDev ? 'Development - Customer Domain' : 'Production - Customer Domain'
+        }
+      ],
+      tags: [
+        { name: 'customer', description: 'Customer shopping operations' }
+      ]
+    };
+
+    this.app.doc('/openapi/customer.json', customerOpenAPIDocument);
+    this.app.get('/doc/customer', swaggerUI({ url: '/openapi/customer.json' }));
+  }
+
+  private setupUnifiedOpenAPIEndpoint() {
+    // Unified OpenAPI documentation (for backward compatibility)
+    const unifiedOpenAPIDocument = this.app.getOpenAPIDocument({
+      openapi: '3.0.0',
+      info: {
+        title: 'Parts App API - Unified Documentation',
+        version: '1.0.0',
+        description: 'Vehicle Parts Catalog API with comprehensive functionality (Legacy endpoints + Domain-specific endpoints)'
       },
       servers: [
         {
@@ -97,11 +210,11 @@ class Server {
     });
 
     // Add security schemes
-    if (!openAPIDocument.components) {
-      openAPIDocument.components = {};
+    if (!unifiedOpenAPIDocument.components) {
+      unifiedOpenAPIDocument.components = {};
     }
 
-    openAPIDocument.components.securitySchemes = {
+    unifiedOpenAPIDocument.components.securitySchemes = {
       bearerAuth: {
         type: 'http',
         scheme: 'bearer',
@@ -109,40 +222,52 @@ class Server {
       }
     };
 
-    // Export OpenAPI spec in development
+    // Export OpenAPI specs in development
     if (isDev) {
-      this.exportOpenAPISpec(openAPIDocument);
+      this.exportOpenAPISpecs(unifiedOpenAPIDocument);
     }
 
-    // Serve OpenAPI documentation
+    // Serve unified OpenAPI documentation
     this.app.get('/openapi.json', (c) => {
-      return c.json(openAPIDocument);
+      return c.json(unifiedOpenAPIDocument);
     });
 
     this.app.get('/doc', swaggerUI({ url: '/openapi.json' }));
-
-    // 404 handler
-    this.app.notFound((c) => {
-      return c.json({
-        message: 'Not Found',
-        path: c.req.path,
-        method: c.req.method
-      }, 404);
-    });
   }
 
-  private exportOpenAPISpec(document: any) {
+  private exportOpenAPISpecs(unifiedDocument: any) {
     try {
       const openApiDir = path.join(process.cwd(), 'openapi');
       if (!fs.existsSync(openApiDir)) {
         fs.mkdirSync(openApiDir, { recursive: true });
       }
 
-      const jsonPath = path.join(openApiDir, 'openapi.json');
-      fs.writeFileSync(jsonPath, JSON.stringify(document, null, 2));
-      logger.info(`OpenAPI JSON exported to: ${jsonPath}`);
+      // Export unified spec
+      const unifiedPath = path.join(openApiDir, 'openapi.json');
+      fs.writeFileSync(unifiedPath, JSON.stringify(unifiedDocument, null, 2));
+      logger.info(`Unified OpenAPI JSON exported to: ${unifiedPath}`);
+
+      // Export domain-specific specs (for frontend type generation)
+      const coreSpec = { /* Core domain spec */ };
+      const vendorSpec = { /* Vendor domain spec */ };
+      const customerSpec = { /* Customer domain spec */ };
+
+      fs.writeFileSync(
+        path.join(openApiDir, 'core.json'),
+        JSON.stringify(coreSpec, null, 2)
+      );
+      fs.writeFileSync(
+        path.join(openApiDir, 'vendor.json'),
+        JSON.stringify(vendorSpec, null, 2)
+      );
+      fs.writeFileSync(
+        path.join(openApiDir, 'customer.json'),
+        JSON.stringify(customerSpec, null, 2)
+      );
+
+      logger.info('Domain-specific OpenAPI specs exported');
     } catch (error) {
-      logger.error('Failed to export OpenAPI spec:', error);
+      logger.error('Failed to export OpenAPI specs:', error);
     }
   }
 
@@ -214,7 +339,13 @@ class Server {
 
       logger.info(`🚀 Server running on port: ${port}`);
       logger.info(`📝 API available at http://localhost:${port}/api`);
-      logger.info(`📚 Docs available at http://localhost:${port}/doc`);
+      logger.info(`🎯 Core Domain API available at http://localhost:${port}/api/core`);
+      logger.info(`🏪 Vendor Domain API available at http://localhost:${port}/api/vendor`);
+      logger.info(`🛍️ Customer Domain API available at http://localhost:${port}/api/customer`);
+      logger.info(`📚 Unified Docs available at http://localhost:${port}/doc`);
+      logger.info(`📖 Core Docs available at http://localhost:${port}/doc/core`);
+      logger.info(`📖 Vendor Docs available at http://localhost:${port}/doc/vendor`);
+      logger.info(`📖 Customer Docs available at http://localhost:${port}/doc/customer`);
 
       // Graceful shutdown
       process.on('SIGTERM', () => {

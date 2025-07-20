@@ -1,14 +1,39 @@
 import {
     CreateManufacturerDto,
-    ManufacturerDetailDto,
-    ManufacturerDto,
-    ManufacturerListQueryDto,
-    ManufacturerListResponseDto,
     UpdateManufacturerDto,
-    toManufacturerDetailDto,
-    toManufacturerDto
-} from './manufacturer.dto.js';
+    ManufacturerResponse,
+    ManufacturerDetailResponse,
+    ManufacturerListQuery,
+    ManufacturerListResponse
+} from '../../../schemas/core/manufacturer.schemas.js';
 import { ManufacturerRepository } from './manufacturer.repository.js';
+
+// Helper function to convert DB entity to DTO
+function toManufacturerDto(manufacturer: any): ManufacturerResponse {
+    return {
+        id: manufacturer.publicId,
+        name: manufacturer.name,
+        displayName: manufacturer.displayName,
+        slug: manufacturer.slug,
+        logoImageId: manufacturer.logoImagePublicId || undefined,
+        countryCode: manufacturer.countryCode || undefined,
+        description: manufacturer.description || undefined,
+        isActive: manufacturer.isActive,
+        isVerified: manufacturer.isVerified,
+        modelCount: manufacturer.modelCount ? Number(manufacturer.modelCount) : undefined,
+        createdAt: manufacturer.createdAt.toString(),
+        updatedAt: manufacturer.updatedAt?.toString() || manufacturer.createdAt.toString(),
+    };
+}
+
+// Helper function to convert DB entity to detailed DTO
+function toManufacturerDetailDto(manufacturer: any): ManufacturerDetailResponse {
+    return {
+        ...toManufacturerDto(manufacturer),
+        createdBy: manufacturer.createdBy || undefined,
+        updatedBy: manufacturer.updatedBy || undefined,
+    };
+}
 
 export class ManufacturerService {
     private repository: ManufacturerRepository;
@@ -20,7 +45,7 @@ export class ManufacturerService {
     /**
      * Get all manufacturers with filtering, sorting, and pagination
      */
-    async getAllManufacturers(query: ManufacturerListQueryDto): Promise<ManufacturerListResponseDto> {
+    async getAllManufacturers(query: ManufacturerListQuery): Promise<ManufacturerListResponse> {
         const filters = {
             search: query.search,
             status: query.status || 'all',
@@ -50,7 +75,7 @@ export class ManufacturerService {
     /**
      * Get a manufacturer by public ID with detailed information
      */
-    async getManufacturerById(publicId: string): Promise<ManufacturerDetailDto | null> {
+    async getManufacturerById(publicId: string): Promise<ManufacturerDetailResponse | null> {
         const manufacturer = await this.repository.findByPublicId(publicId);
         return manufacturer ? toManufacturerDetailDto(manufacturer) : null;
     }
@@ -58,7 +83,7 @@ export class ManufacturerService {
     /**
      * Get a manufacturer by public ID with detailed information
      */
-    async getManufacturerByPublicId(publicId: string): Promise<ManufacturerDetailDto | null> {
+    async getManufacturerByPublicId(publicId: string): Promise<ManufacturerDetailResponse | null> {
         const manufacturer = await this.repository.findByPublicId(publicId);
         return manufacturer ? toManufacturerDetailDto(manufacturer) : null;
     }
@@ -66,7 +91,7 @@ export class ManufacturerService {
     /**
      * Get a manufacturer by name (for uniqueness validation)
      */
-    async getManufacturerByName(name: string): Promise<ManufacturerDto | null> {
+    async getManufacturerByName(name: string): Promise<ManufacturerResponse | null> {
         const manufacturer = await this.repository.findByName(name);
         return manufacturer ? toManufacturerDto(manufacturer) : null;
     }
@@ -74,7 +99,7 @@ export class ManufacturerService {
     /**
      * Get a manufacturer by slug
      */
-    async getManufacturerBySlug(slug: string): Promise<ManufacturerDetailDto | null> {
+    async getManufacturerBySlug(slug: string): Promise<ManufacturerDetailResponse | null> {
         const manufacturer = await this.repository.findBySlug(slug);
         return manufacturer ? toManufacturerDetailDto(manufacturer) : null;
     }
@@ -82,7 +107,7 @@ export class ManufacturerService {
     /**
      * Create a new manufacturer
      */
-    async createManufacturer(dto: CreateManufacturerDto, createdBy?: string): Promise<ManufacturerDto> {
+    async createManufacturer(dto: CreateManufacturerDto, createdBy?: string): Promise<ManufacturerResponse> {
         // Validate uniqueness
         const existingManufacturer = await this.repository.findByName(dto.name);
         if (existingManufacturer) {
@@ -116,7 +141,7 @@ export class ManufacturerService {
         publicId: string,
         dto: UpdateManufacturerDto,
         updatedBy?: string
-    ): Promise<ManufacturerDetailDto | null> {
+    ): Promise<ManufacturerDetailResponse | null> {
         // Validate country code format if provided
         if (dto.countryCode && !/^[A-Z]{2}$/.test(dto.countryCode)) {
             throw new Error('Country code must be a 2-letter uppercase ISO code');
@@ -149,7 +174,7 @@ export class ManufacturerService {
         publicId: string,
         isActive: boolean,
         updatedBy?: string
-    ): Promise<ManufacturerDto | null> {
+    ): Promise<ManufacturerResponse | null> {
         // First get the manufacturer to get internal ID
         const manufacturer = await this.repository.findByPublicId(publicId);
         if (!manufacturer) {
@@ -174,7 +199,7 @@ export class ManufacturerService {
     /**
      * Verify a manufacturer (admin only)
      */
-    async verifyManufacturer(publicId: string, updatedBy?: string): Promise<ManufacturerDto | null> {
+    async verifyManufacturer(publicId: string, updatedBy?: string): Promise<ManufacturerResponse | null> {
         const updateData = {
             isVerified: true,
             updatedBy,
@@ -214,7 +239,7 @@ export class ManufacturerService {
     /**
      * Search manufacturers by name or display name
      */
-    async searchManufacturers(query: string, limit: number = 10): Promise<ManufacturerDto[]> {
+    async searchManufacturers(query: string, limit: number = 10): Promise<ManufacturerResponse[]> {
         const searchResult = await this.repository.findAll(
             { search: query.trim() },
             { sort: 'name', order: 'asc' },

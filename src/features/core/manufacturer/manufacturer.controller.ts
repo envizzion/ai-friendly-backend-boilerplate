@@ -1,5 +1,10 @@
 import { Context } from 'hono';
-import { CreateManufacturerDto, UpdateManufacturerDto } from './manufacturer.dto.js';
+import { 
+    CreateManufacturerDto, 
+    UpdateManufacturerDto,
+    ManufacturerListQuery,
+    manufacturerListQuerySchema 
+} from '../../../schemas/core/manufacturer.schemas.js';
 import { ManufacturerService } from './manufacturer.service.js';
 
 export class ManufacturerController {
@@ -11,7 +16,9 @@ export class ManufacturerController {
 
     getAllManufacturers = async (c: Context) => {
         try {
-            const manufacturers = await this.service.getAllManufacturers(c.req.query());
+            const rawQuery = c.req.query();
+            const parsedQuery = manufacturerListQuerySchema.parse(rawQuery);
+            const manufacturers = await this.service.getAllManufacturers(parsedQuery);
             return c.json(manufacturers);
         } catch (error) {
             console.error('Error getting all manufacturers:', error);

@@ -1,7 +1,7 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from 'zod';
 
 // ============================================
-// BASE SCHEMAS
+// MANUFACTURER DOMAIN SCHEMAS
 // ============================================
 
 export const createManufacturerSchema = z.object({
@@ -62,7 +62,7 @@ export const updateManufacturerSchema = z.object({
     })
 }).openapi('UpdateManufacturerRequest');
 
-export const manufacturerSchema = z.object({
+export const manufacturerResponseSchema = z.object({
     id: z.string().uuid().openapi({
         example: '123e4567-e89b-12d3-a456-426614174000',
         description: 'Unique manufacturer ID'
@@ -113,7 +113,7 @@ export const manufacturerSchema = z.object({
     })
 }).openapi('Manufacturer');
 
-export const manufacturerDetailSchema = manufacturerSchema.extend({
+export const manufacturerDetailResponseSchema = manufacturerResponseSchema.extend({
     createdBy: z.string().uuid().nullable().openapi({
         example: '123e4567-e89b-12d3-a456-426614174000',
         description: 'Created by user ID'
@@ -167,7 +167,7 @@ export const manufacturerListQuerySchema = z.object({
     })
 }).openapi('ManufacturerListQuery');
 
-export const toggleStatusSchema = z.object({
+export const toggleManufacturerStatusSchema = z.object({
     isActive: z.boolean().openapi({
         example: false,
         description: 'New active status'
@@ -178,218 +178,34 @@ export const toggleStatusSchema = z.object({
 // RESPONSE SCHEMAS
 // ============================================
 
-export const paginationSchema = z.object({
-    page: z.number().openapi({
-        example: 1,
-        description: 'Current page'
-    }),
-    limit: z.number().openapi({
-        example: 20,
-        description: 'Items per page'
-    }),
-    total: z.number().openapi({
-        example: 100,
-        description: 'Total items'
-    }),
-    totalPages: z.number().openapi({
-        example: 5,
-        description: 'Total pages'
-    }),
-    hasNext: z.boolean().openapi({
-        example: true,
-        description: 'Has next page'
-    }),
-    hasPrev: z.boolean().openapi({
-        example: false,
-        description: 'Has previous page'
-    })
-}).openapi('Pagination');
-
 export const manufacturerListResponseSchema = z.object({
-    data: z.array(manufacturerSchema),
-    pagination: paginationSchema
+    data: z.array(manufacturerResponseSchema),
+    pagination: z.object({
+        page: z.number(),
+        limit: z.number(),
+        total: z.number(),
+        totalPages: z.number(),
+        hasNext: z.boolean(),
+        hasPrev: z.boolean(),
+    })
 }).openapi('ManufacturerListResponse');
 
-export const successResponseSchema = z.object({
-    data: manufacturerSchema
+export const manufacturerSuccessResponseSchema = z.object({
+    data: manufacturerResponseSchema
 }).openapi('ManufacturerSuccessResponse');
 
-export const detailResponseSchema = z.object({
-    data: manufacturerDetailSchema
+export const manufacturerDetailSuccessResponseSchema = z.object({
+    data: manufacturerDetailResponseSchema
 }).openapi('ManufacturerDetailResponse');
 
 // ============================================
-// ROUTE DEFINITIONS
+// TYPE EXPORTS (Replace manual DTOs)
 // ============================================
 
-export const getAllManufacturersRoute = createRoute({
-    method: 'get',
-    path: '',
-    tags: ['Manufacturers'],
-    summary: 'List manufacturers',
-    description: 'Get all manufacturers with filtering, sorting, and pagination',
-    request: {
-        query: manufacturerListQuerySchema
-    },
-    responses: {
-        200: {
-            description: 'List of manufacturers',
-            content: {
-                'application/json': {
-                    schema: manufacturerListResponseSchema
-                }
-            }
-        },
-        500: {
-            description: 'Internal server error'
-        }
-    }
-});
-
-export const getManufacturerByIdRoute = createRoute({
-    method: 'get',
-    path: '/:id',
-    tags: ['Manufacturers'],
-    summary: 'Get single manufacturer',
-    description: 'Get a manufacturer by ID with detailed information',
-    request: {
-        params: z.object({
-            id: z.string().uuid().openapi({
-                example: '123e4567-e89b-12d3-a456-426614174000',
-                description: 'Manufacturer public ID'
-            })
-        })
-    },
-    responses: {
-        200: {
-            description: 'Manufacturer details',
-            content: {
-                'application/json': {
-                    schema: detailResponseSchema
-                }
-            }
-        },
-        404: {
-            description: 'Manufacturer not found'
-        },
-        500: {
-            description: 'Internal server error'
-        }
-    }
-});
-
-export const createManufacturerRoute = createRoute({
-    method: 'post',
-    path: '',
-    tags: ['Manufacturers'],
-    summary: 'Create manufacturer',
-    description: 'Create a new manufacturer',
-    request: {
-        body: {
-            content: {
-                'application/json': {
-                    schema: createManufacturerSchema
-                }
-            }
-        }
-    },
-    responses: {
-        201: {
-            description: 'Manufacturer created',
-            content: {
-                'application/json': {
-                    schema: successResponseSchema
-                }
-            }
-        },
-        400: {
-            description: 'Validation error',
-            content: {
-                'application/json': {
-                    schema: z.object({
-                        error: z.object({
-                            code: z.string(),
-                            message: z.string(),
-                            details: z.array(z.object({
-                                field: z.string(),
-                                message: z.string()
-                            })).optional()
-                        })
-                    })
-                }
-            }
-        },
-        500: {
-            description: 'Internal server error'
-        }
-    }
-});
-
-export const updateManufacturerRoute = createRoute({
-    method: 'put',
-    path: '/:id',
-    tags: ['Manufacturers'],
-    summary: 'Update manufacturer',
-    description: 'Update an existing manufacturer',
-    request: {
-        params: z.object({
-            id: z.string().uuid().openapi({
-                example: '123e4567-e89b-12d3-a456-426614174000',
-                description: 'Manufacturer public ID'
-            })
-        }),
-        body: {
-            content: {
-                'application/json': {
-                    schema: updateManufacturerSchema
-                }
-            }
-        }
-    },
-    responses: {
-        200: {
-            description: 'Manufacturer updated',
-            content: {
-                'application/json': {
-                    schema: detailResponseSchema
-                }
-            }
-        },
-        404: {
-            description: 'Manufacturer not found'
-        },
-        400: {
-            description: 'Validation error'
-        },
-        500: {
-            description: 'Internal server error'
-        }
-    }
-});
-
-export const deleteManufacturerRoute = createRoute({
-    method: 'delete',
-    path: '/:id',
-    tags: ['Manufacturers'],
-    summary: 'Delete manufacturer',
-    description: 'Delete a manufacturer (soft delete if models exist, hard delete otherwise)',
-    request: {
-        params: z.object({
-            id: z.string().uuid().openapi({
-                example: '123e4567-e89b-12d3-a456-426614174000',
-                description: 'Manufacturer public ID'
-            })
-        })
-    },
-    responses: {
-        204: {
-            description: 'Manufacturer deleted'
-        },
-        404: {
-            description: 'Manufacturer not found'
-        },
-        500: {
-            description: 'Internal server error'
-        }
-    }
-});
+export type CreateManufacturerDto = z.infer<typeof createManufacturerSchema>;
+export type UpdateManufacturerDto = z.infer<typeof updateManufacturerSchema>;
+export type ManufacturerResponse = z.infer<typeof manufacturerResponseSchema>;
+export type ManufacturerDetailResponse = z.infer<typeof manufacturerDetailResponseSchema>;
+export type ManufacturerListQuery = z.infer<typeof manufacturerListQuerySchema>;
+export type ManufacturerListResponse = z.infer<typeof manufacturerListResponseSchema>;
+export type ToggleManufacturerStatus = z.infer<typeof toggleManufacturerStatusSchema>;

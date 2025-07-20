@@ -51,16 +51,16 @@
       "@database/*": [
         "src/shared/database/*"
       ],
-      "@schemas/*": [
+      "@db-schemas/*": [
         "src/shared/database/schemas/*"
       ],
-      "@core-schemas/*": [
+      "@core-db-schemas/*": [
         "src/shared/database/schemas/core/*"
       ],
-      "@customer-schemas/*": [
+      "@customer-db-schemas/*": [
         "src/shared/database/schemas/customer/*"
       ],
-      "@vendor-schemas/*": [
+      "@vendor-db-schemas/*": [
         "src/shared/database/schemas/vendor/*"
       ],
       "@cloud/*": [
