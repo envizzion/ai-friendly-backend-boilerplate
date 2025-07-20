@@ -321,6 +321,15 @@ shoppingCart.vendorInventoryPublicId → vendor.vendorInventory.publicId
 
 ## 📚 Documentation
 
+### **📖 Complete Documentation**
+See **[docs/INDEX.md](./INDEX.md)** for all documentation files.
+
+**Quick Links:**
+- **[CLAUDE.md](../CLAUDE.md)** - AI development guide with step-by-step feature implementation
+- **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)** - Testing setup and strategy
+- **[TYPE_SYSTEM_DOCUMENTATION.md](./TYPE_SYSTEM_DOCUMENTATION.md)** - Schemas and types
+- **[VSCODE_SETUP.md](./VSCODE_SETUP.md)** - VS Code configuration
+
 ### **API Documentation**
 - **Swagger UI**: `http://localhost:3000/doc`
 - **OpenAPI JSON**: `http://localhost:3000/openapi.json`
