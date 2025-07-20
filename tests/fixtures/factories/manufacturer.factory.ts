@@ -1,13 +1,10 @@
 import { faker } from '@faker-js/faker';
-import { generateMock } from '@anatine/zod-mock';
 import { 
-  createManufacturerSchema,
-  updateManufacturerSchema,
   type CreateManufacturerDto,
   type UpdateManufacturerDto,
   type ManufacturerResponse
 } from '@/schemas/core/manufacturer.schemas';
-import { generatePublicId } from '@/shared/utils/string';
+import { generatePublicId, generateUuid } from '@/shared/utils/string';
 
 export const manufacturerFactory = {
   // Build input for creating a manufacturer
@@ -41,11 +38,11 @@ export const manufacturerFactory = {
   buildResponse: (overrides?: Partial<ManufacturerResponse>): ManufacturerResponse => {
     const name = overrides?.name || faker.company.name();
     return {
-      id: generatePublicId(),
+      id: generateUuid(),
       name,
       displayName: overrides?.displayName || name + ' Inc.',
       slug: overrides?.slug || name.toLowerCase().replace(/\s+/g, '-'),
-      logoImageId: faker.datatype.boolean() ? faker.string.uuid() : null,
+      logoImageId: faker.datatype.boolean() ? generateUuid() : null,
       countryCode: faker.location.countryCode('alpha-2').toUpperCase(),
       description: faker.company.catchPhrase(),
       isActive: true,
@@ -71,11 +68,11 @@ export const manufacturerFactory = {
   buildDbInsert: (overrides?: any) => {
     const name = overrides?.name || faker.company.name();
     return {
-      publicId: generatePublicId(),
+      publicId: generateUuid(), // Use proper UUID for database
       name,
       displayName: overrides?.displayName || name + ' Inc.',
       slug: name.toLowerCase().replace(/\s+/g, '-'),
-      logoImagePublicId: faker.datatype.boolean() ? faker.string.uuid() : null,
+      logoImagePublicId: faker.datatype.boolean() ? generateUuid() : null,
       countryCode: faker.location.countryCode('alpha-2').toUpperCase(),
       description: faker.company.catchPhrase(),
       isActive: true,

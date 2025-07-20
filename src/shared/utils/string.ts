@@ -16,3 +16,17 @@ const randomString = (len: number) => {
 };
 
 export { randomString };
+
+// Generate a UUID v4
+export function generateUuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// Generate a public ID for entities
+export function generatePublicId(prefix: string = 'entity'): string {
+  return `${prefix}_${randomString(8)}`;
+}

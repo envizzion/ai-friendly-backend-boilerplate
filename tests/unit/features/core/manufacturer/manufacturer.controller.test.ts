@@ -140,11 +140,10 @@ describe('ManufacturerController', () => {
       expect(mockContext.json).toHaveBeenCalledWith(created, 201);
     });
 
-    it('should handle validation errors', async () => {
-      mockContext.req.json.mockResolvedValue({ 
-        // Missing required fields
-        displayName: 'Test',
-      });
+    it('should handle service errors', async () => {
+      const input = manufacturerFactory.buildCreateInput();
+      mockContext.req.json.mockResolvedValue(input);
+      mockService.createManufacturer.mockRejectedValue(new Error('Service error'));
 
       await controller.createManufacturer(mockContext as Context);
 

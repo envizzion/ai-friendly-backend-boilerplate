@@ -1,43 +1,64 @@
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import * as coreSchema from '@/shared/database/schemas/core/drizzle-schema';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { randomBytes } from 'crypto';
 
-let container: StartedPostgreSqlContainer | null = null;
 let sql: postgres.Sql | null = null;
 let db: PostgresJsDatabase<typeof coreSchema> | null = null;
+let adminSql: postgres.Sql | null = null;
+let testDbName: string | null = null;
+
+// Default connection string for local PostgreSQL
+const DEFAULT_PG_URL = process.env.TEST_DATABASE_URL || 'postgres://root:password@localhost/parts-db-new';
 
 export async function setupTestDatabase() {
-  // Start PostgreSQL container
-  container = await new PostgreSqlContainer('postgres:16-alpine')
-    .withDatabase('test_db')
-    .withUsername('test_user')
-    .withPassword('test_pass')
-    .withExposedPorts(5432)
-    .start();
+  // Generate unique database name for this test run
+  testDbName = `test_${randomBytes(8).toString('hex')}`;
+  
+  // Connect to admin database to create test database
+  adminSql = postgres(DEFAULT_PG_URL, { max: 1 });
+  
+  try {
+    // Create test database
+    await adminSql.unsafe(`CREATE DATABASE "${testDbName}"`);
+    
+    // Connect to the new test database
+    const testUrl = DEFAULT_PG_URL.replace(/\/[^/]*$/, `/${testDbName}`);
+    sql = postgres(testUrl, { max: 1 });
+    db = drizzle(sql, { schema: coreSchema });
 
-  const connectionString = container.getConnectionUri();
-  sql = postgres(connectionString, { max: 1 });
-  db = drizzle(sql, { schema: coreSchema });
+    // Run migrations
+    await migrate(db, { migrationsFolder: './src/shared/database/migrations' });
 
-  // Run migrations
-  await migrate(db, { migrationsFolder: './src/shared/database/migrations' });
-
-  return { db, sql, connectionString };
+    return { db, sql, connectionString: testUrl };
+  } catch (error) {
+    console.error('Failed to setup test database:', error);
+    if (adminSql) await adminSql.end();
+    throw error;
+  }
 }
 
 export async function cleanupTestDatabase() {
-  if (sql) {
-    await sql.end();
+  try {
+    if (sql) {
+      await sql.end();
+    }
+    
+    if (adminSql && testDbName) {
+      // Drop test database
+      await adminSql.unsafe(`DROP DATABASE IF EXISTS "${testDbName}"`);
+      await adminSql.end();
+    }
+  } catch (error) {
+    console.error('Error cleaning up test database:', error);
+  } finally {
+    sql = null;
+    db = null;
+    adminSql = null;
+    testDbName = null;
   }
-  if (container) {
-    await container.stop();
-  }
-  sql = null;
-  db = null;
-  container = null;
 }
 
 export function getTestDb() {

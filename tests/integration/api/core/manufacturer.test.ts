@@ -8,7 +8,7 @@ import type { ManufacturerListResponse, ManufacturerResponse } from '@/schemas/c
 describe('Manufacturer API Integration Tests', () => {
   beforeAll(async () => {
     await setupTestDatabase();
-  });
+  }, 10000); // 10 second timeout for database setup
 
   afterAll(async () => {
     await cleanupTestDatabase();

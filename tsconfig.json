@@ -71,6 +71,9 @@
       ],
       "@types/*": [
         "src/shared/types/*"
+      ],
+      "@tests/*": [
+        "tests/*"
       ]
     }
   },

@@ -114,8 +114,9 @@ export class ManufacturerService {
             throw new Error(`Manufacturer with name "${dto.name}" already exists`);
         }
 
-        // Validate country code format if provided
-        if (dto.countryCode && !/^[A-Z]{2}$/.test(dto.countryCode)) {
+        // Validate and normalize country code format if provided
+        const normalizedCountryCode = dto.countryCode?.toUpperCase();
+        if (normalizedCountryCode && !/^[A-Z]{2}$/.test(normalizedCountryCode)) {
             throw new Error('Country code must be a 2-letter uppercase ISO code');
         }
 
@@ -123,7 +124,7 @@ export class ManufacturerService {
             name: dto.name.trim(),
             displayName: dto.displayName.trim(),
             logoImageId: dto.logoImageId?.trim(),
-            countryCode: dto.countryCode?.toUpperCase(),
+            countryCode: normalizedCountryCode,
             description: dto.description?.trim(),
             isActive: dto.isActive ?? true,
             isVerified: dto.isVerified ?? false,
@@ -142,15 +143,16 @@ export class ManufacturerService {
         dto: UpdateManufacturerDto,
         updatedBy?: string
     ): Promise<ManufacturerDetailResponse | null> {
-        // Validate country code format if provided
-        if (dto.countryCode && !/^[A-Z]{2}$/.test(dto.countryCode)) {
+        // Validate and normalize country code format if provided
+        const normalizedCountryCode = dto.countryCode?.toUpperCase();
+        if (normalizedCountryCode && !/^[A-Z]{2}$/.test(normalizedCountryCode)) {
             throw new Error('Country code must be a 2-letter uppercase ISO code');
         }
 
         const updateData = {
             displayName: dto.displayName?.trim(),
             logoImageId: dto.logoImageId?.trim(),
-            countryCode: dto.countryCode?.toUpperCase(),
+            countryCode: normalizedCountryCode,
             description: dto.description?.trim(),
             isActive: dto.isActive,
             isVerified: dto.isVerified,

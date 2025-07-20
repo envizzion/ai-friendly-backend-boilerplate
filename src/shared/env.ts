@@ -6,14 +6,14 @@ const envSchema = z.object({
   // Server configuration
   PORT: z.string().default('3000'),
   LOG_LEVEL: z.string().default('info'),
-  NODE_ENV: z.enum(['development', 'production']).default('development'),
-  SECRET_KEY: z.string(),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  SECRET_KEY: z.string().optional(),
 
   // Database configuration
   DB_HOST: z.string().default('localhost'),
-  DB_USER: z.string(),
-  DB_PASSWORD: z.string(),
-  DB_NAME: z.string(),
+  DB_USER: z.string().optional(),
+  DB_PASSWORD: z.string().optional(),
+  DB_NAME: z.string().optional(),
 
   // Redis configuration
   REDIS_HOST: z.string().default('localhost'),
@@ -22,7 +22,7 @@ const envSchema = z.object({
 
   // File storage configuration
   CDN_URL_EXPIRY_HOURS: z.string().default('24'), // CDN URL expiration time in hours
-  GCS_BUCKET_NAME: z.string(), // Google Cloud Storage bucket name
+  GCS_BUCKET_NAME: z.string().optional(), // Google Cloud Storage bucket name
 
   // AWS configuration (optional)
   AWS_ACCESS_KEY_ID: z.string().optional(), // AWS access key ID
