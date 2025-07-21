@@ -365,21 +365,39 @@ Our database is organized into completely separate sections for optimal developm
 - **Schema**: `src/shared/database/schemas/customer/drizzle-schema.ts` 🚧
 - **Types**: `src/shared/database/schemas/customer/kysely-types.ts` 🚧
 
-### Cross-Section References
-Sections communicate via **public IDs** for loose coupling:
-```typescript
-// Vendor inventory references core parts
-vendorInventory.corePartPublicId → core.parts.publicId
+### Cross-Domain Access Strategy
+We use a **pragmatic approach** that leverages Kysely's type safety:
 
-// Customer cart references vendor inventory
-shoppingCart.vendorInventoryPublicId → vendor.vendorInventory.publicId
+**Read Freely, Write Responsibly**:
+- **Any repository can read from any table** using JOINs for optimal performance
+- **Only write to tables within your own domain** to maintain clear ownership
+- Use service orchestration for cross-domain business operations
+
+**Performance Benefits**:
+- **10-100x faster queries** by eliminating N+1 problems
+- Single database round-trips reduce latency
+- Direct JOINs provide better optimization opportunities
+
+```typescript
+// ✅ ALLOWED: Cross-domain reads with JOINs
+const inventoryWithParts = await db
+    .selectFrom('vendorInventory')
+    .leftJoin('part', 'vendorInventory.corePartPublicId', 'part.publicId')
+    .leftJoin('manufacturer', 'part.manufacturerId', 'manufacturer.id')
+    .selectAll()
+    .execute();
+
+// ❌ NOT ALLOWED: Cross-domain writes
+// await db.updateTable('part').set({...}) // From vendor repository
 ```
 
+**See** **[CROSS_DOMAIN_DATABASE_ACCESS.md](./docs/CROSS_DOMAIN_DATABASE_ACCESS.md)** **for complete guidelines**
+
 ### Benefits of This Approach
-- **Zero Risk**: Core functionality remains unchanged
-- **Complete Isolation**: Each section evolves independently
-- **AI-Friendly**: Crystal clear where each feature belongs
-- **Team Ready**: Perfect for parallel development
+- **Dramatic Performance Gains**: Eliminate N+1 queries with efficient JOINs
+- **Simplified Development**: Think in data relationships, not artificial boundaries  
+- **Type Safety Without Complexity**: Kysely prevents accidents at compile time
+- **Flexible Evolution**: Architecture adapts based on real needs
 
 ## 📚 Documentation
 
@@ -387,11 +405,11 @@ shoppingCart.vendorInventoryPublicId → vendor.vendorInventory.publicId
 See **[docs/INDEX.md](./INDEX.md)** for all documentation files.
 
 **Quick Links:**
-- **[CLAUDE.md](../CLAUDE.md)** - AI development guide with step-by-step feature implementation
-- **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)** - Testing setup and strategy
-- **[TYPE_SYSTEM_DOCUMENTATION.md](./TYPE_SYSTEM_DOCUMENTATION.md)** - Schemas and types
-- **[VSCODE_SETUP.md](./VSCODE_SETUP.md)** - VS Code configuration
-- **[versioning_analysis.md](./versioning_analysis.md)** - API evolution strategy
+- **[CLAUDE.md](./CLAUDE.md)** - AI development guide with step-by-step feature implementation
+- **[CROSS_DOMAIN_DATABASE_ACCESS.md](./docs/CROSS_DOMAIN_DATABASE_ACCESS.md)** - Pragmatic cross-domain query strategy
+- **[TESTING_STRATEGY.md](./docs/TESTING_STRATEGY.md)** - Testing setup and strategy
+- **[TYPE_SYSTEM_DOCUMENTATION.md](./docs/TYPE_SYSTEM_DOCUMENTATION.md)** - Schemas and types
+- **[VSCODE_SETUP.md](./docs/VSCODE_SETUP.md)** - VS Code configuration
 - **[BREAKING_CHANGES.md](../BREAKING_CHANGES.md)** - Breaking changes log
 
 ### **API Documentation**

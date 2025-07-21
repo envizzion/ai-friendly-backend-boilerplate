@@ -17,6 +17,7 @@
 - **[DATABASE_IMPLEMENTATION_COMPLETE.md](./DATABASE_IMPLEMENTATION_COMPLETE.md)** - Database architecture and setup
 - **[DATABASE_SECTION_SEPARATION.md](./DATABASE_SECTION_SEPARATION.md)** - Domain-based database organization  
 - **[DATABASE_STRUCTURE_REORGANIZATION.md](./DATABASE_STRUCTURE_REORGANIZATION.md)** - Database migration strategy
+- **[CROSS_DOMAIN_DATABASE_ACCESS.md](./CROSS_DOMAIN_DATABASE_ACCESS.md)** - Pragmatic cross-domain query strategy
 
 ### **☁️ Infrastructure**
 - **[CLOUD_PROVIDERS.md](./CLOUD_PROVIDERS.md)** - AWS & GCP integration setup
@@ -31,6 +32,7 @@
 | Fix VS Code import errors | [VSCODE_SETUP.md](./VSCODE_SETUP.md) |
 | Work with schemas/types | [TYPE_SYSTEM_DOCUMENTATION.md](./TYPE_SYSTEM_DOCUMENTATION.md) |
 | Database questions | [DATABASE_IMPLEMENTATION_COMPLETE.md](./DATABASE_IMPLEMENTATION_COMPLETE.md) |
+| Cross-domain queries | [CROSS_DOMAIN_DATABASE_ACCESS.md](./CROSS_DOMAIN_DATABASE_ACCESS.md) |
 | Cloud integration | [CLOUD_PROVIDERS.md](./CLOUD_PROVIDERS.md) |
 
 ## 🤖 For Claude AI
