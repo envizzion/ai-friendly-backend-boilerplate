@@ -17,6 +17,7 @@ docs/
 ├── DATABASE_IMPLEMENTATION_COMPLETE.md # Database architecture and setup
 ├── DATABASE_SECTION_SEPARATION.md      # Domain-based database organization
 ├── DATABASE_STRUCTURE_REORGANIZATION.md # Database migration strategy
+├── CROSS_DOMAIN_DATABASE_ACCESS.md     # Pragmatic cross-domain query strategy
 ├── MODULE_SYSTEM_COMPARISON.md         # ES Modules vs Bundled comparison
 └── versioning_analysis.md              # API evolution strategy
 ```
@@ -60,8 +61,10 @@ Follow the pattern in `docs/TYPE_SYSTEM_DOCUMENTATION.md`:
 
 #### 4. **Implement Repository** 
 Copy from `src/features/core/manufacturer/manufacturer.repository.ts`:
-- Use domain-specific database connection
-- Implement CRUD operations
+- **Use unified database type** - `Kysely<DB>` provides full access with type safety
+- **Read freely across domains** - Use JOINs for performance, avoid N+1 queries  
+- **Write only to own domain** - Only modify tables your repository owns
+- Implement CRUD operations with optimal query patterns
 - Add filtering, sorting, pagination
 - Handle error cases
 
@@ -134,6 +137,7 @@ pnpm db:generate-{domain}-types
 ### **Database Operations**
 - **Architecture**: `docs/DATABASE_IMPLEMENTATION_COMPLETE.md`
 - **Separation**: `docs/DATABASE_SECTION_SEPARATION.md`
+- **Cross-Domain Queries**: `docs/CROSS_DOMAIN_DATABASE_ACCESS.md`
 - **Schema files**: `src/shared/database/schemas/{domain}/`
 
 ### **VS Code Configuration**
@@ -148,6 +152,115 @@ pnpm db:generate-{domain}-types
 - **Analysis**: `docs/versioning_analysis.md`
 - **Breaking Changes**: `BREAKING_CHANGES.md`
 - **Current Phase**: Pre-Production - Move fast and break things freely
+
+## 🏗️ Cross-Domain Database Access - Pragmatic Approach
+
+**CORE PHILOSOPHY**: Leverage Kysely's built-in type safety and embrace pragmatic query patterns for optimal performance.
+
+### **Simplified Principles**
+
+#### **Read Freely, Write Responsibly**
+- **Any repository can read from any table** for performance optimization
+- **Only write to tables within your own domain** 
+- Use JOINs liberally to avoid N+1 query problems
+- Kysely prevents accidents with compile-time type safety
+
+#### **Performance First**
+- Start with efficient JOIN queries, not multiple round-trips
+- JOINs are typically **10-100x faster** than separate queries  
+- Single database round-trip reduces latency and resource usage
+- Database optimizers work best with complete queries
+
+#### **Convention Over Configuration**
+- Use team agreements and code review, not complex type restrictions
+- Repository documentation clearly states domain ownership
+- Service layer handles cross-domain business logic and orchestration
+
+### **Repository Pattern**
+
+```typescript
+// ✅ SIMPLIFIED: Use unified database type
+export class ManufacturerRepository {
+    constructor(private db: Kysely<DB> = dbConn) {}
+    
+    // ✅ ALLOWED: Cross-domain reads with JOINs for performance
+    async findAllWithStats() {
+        return this.db
+            .selectFrom('manufacturer')
+            .leftJoin('model', 'manufacturer.id', 'model.manufacturerId')
+            .leftJoin('file', 'manufacturer.logoImageId', 'file.id')
+            .select([
+                'manufacturer.id',
+                'manufacturer.name',
+                'file.publicId as logoPublicId',
+                (eb) => eb.fn.count('model.id').as('modelCount')
+            ])
+            .groupBy(['manufacturer.id', 'file.publicId'])
+            .execute();
+    }
+    
+    // ✅ ALLOWED: Write to own domain tables
+    async create(data: CreateManufacturerData) {
+        return this.db.insertInto('manufacturer').values(data).execute();
+    }
+    
+    // ❌ NOT ALLOWED: Writing to other domain tables  
+    // async updateVendorInventory() {
+    //     return this.db.updateTable('vendorInventory').set({...}); // DON'T DO THIS
+    // }
+}
+```
+
+### **When to Use Cross-Domain Queries**
+
+#### **✅ Perfect Use Cases:**
+- Dashboard and reporting features requiring aggregated data
+- Search functionality spanning multiple domains  
+- List views with related information (manufacturer + model count)
+- Any read operation where N+1 queries would occur
+- Performance-critical user-facing features
+
+#### **❌ Keep Separate When:**
+- **Write operations** - Always use owning domain's service
+- **Complex business logic** - Service orchestration provides flexibility
+- **Different caching strategies** - Domain-specific cache invalidation
+- **Team boundaries** - Different teams own different domains
+
+### **Service Orchestration Pattern**
+
+For cross-domain writes and complex operations:
+
+```typescript
+export class OrderService {
+    constructor(
+        private customerOrderRepo: CustomerOrderRepository,
+        private vendorInventoryService: VendorInventoryService
+    ) {}
+    
+    async createOrder(customerId: number, items: OrderItem[]) {
+        // 1. Validate inventory (cross-domain read via repository)
+        const inventory = await this.customerOrderRepo.getInventoryForItems(items);
+        
+        // 2. Create customer order (own domain)
+        const order = await this.customerOrderRepo.create({ customerId, items });
+        
+        // 3. Update inventory via service (cross-domain write)
+        await this.vendorInventoryService.reserveItems(items);
+        
+        return order;
+    }
+}
+```
+
+### **Key Benefits**
+
+- **10-100x performance gains** from eliminating N+1 queries
+- **Simplified mental model** - think in data relationships, not artificial boundaries
+- **Faster development** - less boilerplate, more direct queries
+- **Type safety without complexity** - Kysely handles the safety
+- **Easier debugging** - direct queries are easier to understand and optimize
+
+See **`docs/CROSS_DOMAIN_DATABASE_ACCESS.md`** for complete implementation guidelines.
 
 ## 🔧 Development Commands
 
@@ -489,13 +602,14 @@ const toManufacturerResponse = (data: any, version = 'v1') => {
 
 1. **ALWAYS use `.js` extensions in imports** - This project uses Native ES Modules (see ES Module Import Requirements above)
 2. **NEVER access `process.env` directly** - Use `@shared/env.js` for app code, `@tests/test-env.js` for tests (see Environment Variable Management above)
-3. **Break APIs freely in pre-production** - We're in "Ship Fast" phase, no backward compatibility needed (see API Evolution Strategy above)
-4. **Always use the manufacturer feature as your template** - it's the complete reference implementation
-5. **Follow the domain-based organization** - don't create features outside the domain structure
-6. **Include tests for new features** - both unit and integration tests
-7. **Use Zod schemas for all validation** - don't create manual type definitions
-8. **Document breaking changes** - Add all API changes to `BREAKING_CHANGES.md`
-9. **Test database setup requires existing PostgreSQL** - connection details in `.env.test`
+3. **Read freely, write responsibly** - Use JOINs across domains for performance, but only write to your own domain tables (see Cross-Domain Database Access above)
+4. **Break APIs freely in pre-production** - We're in "Ship Fast" phase, no backward compatibility needed (see API Evolution Strategy above)
+5. **Always use the manufacturer feature as your template** - it's the complete reference implementation
+6. **Follow the domain-based organization** - don't create features outside the domain structure
+7. **Include tests for new features** - both unit and integration tests
+8. **Use Zod schemas for all validation** - don't create manual type definitions
+9. **Document breaking changes** - Add all API changes to `BREAKING_CHANGES.md`
+10. **Test database setup requires existing PostgreSQL** - connection details in `.env.test`
 
 ## 📋 Checklist for New Features
 
