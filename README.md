@@ -201,6 +201,64 @@ The manufacturer feature is fully implemented and serves as the template for all
 - ✅ **Auto-Generated Docs** - OpenAPI spec exported to `/openapi/`
 - ✅ **Cloud Provider System** - AWS & GCP integration for storage, AI, and image analysis
 
+## 🚀 Development Philosophy
+
+### **Pre-Production: Ship Fast Strategy**
+
+**Current Phase**: 🚧 **Pre-Production - Move Fast and Break Things**
+
+This project follows a **"Ship Fast Now, Add Versioning When Needed"** approach based on our API evolution analysis. See [`docs/versioning_analysis.md`](./docs/versioning_analysis.md) for the complete strategy.
+
+#### ✅ What We Do in Pre-Production:
+
+1. **Break APIs Freely** - No backward compatibility needed
+2. **Focus on Feature Quality** - Find the right API design
+3. **Use Simple Feature Flags** - Environment-driven experimental features
+4. **Document All Changes** - Track breaking changes in `BREAKING_CHANGES.md`
+
+```bash
+# Example: Enable experimental features
+ENABLE_AI_ANALYSIS=true pnpm dev
+ENABLE_VENDOR_FEATURES=true pnpm dev
+```
+
+#### 🎯 Goals for Pre-Production:
+- Find product-market fit
+- Understand user needs  
+- Ship features fast
+- Learn what actually changes
+
+#### 🚫 What We Don't Do Yet:
+- ❌ API versioning (`/v1/`, `/v2/`)
+- ❌ Backward compatibility
+- ❌ Complex feature flag systems
+- ❌ Over-engineering for scale
+
+### **Future Evolution Path**
+
+#### Early Production (After first users):
+- Switch to additive-only changes
+- Add new fields as optional
+- Maintain backward compatibility
+
+#### Scale Production (Multiple clients):
+- Add feature-level versioning if needed
+- Use client version detection
+- Coordinate breaking changes carefully
+
+### **Architecture Ready for Versioning**
+
+Our feature-based structure is already version-ready:
+
+```typescript
+src/features/{domain}/{feature}/
+├── {feature}.controller.ts    // Easy to create v2 controller
+├── {feature}.service.ts       // Business logic can be shared  
+├── {feature}.repository.ts    // Data access stays same
+├── {feature}.routes.ts        // Add v2 routes easily
+└── {feature}.schemas.ts       // Version schemas separately
+```
+
 ## 🔥 AI Development Benefits
 
 ### Crystal Clear AI Prompts
@@ -248,6 +306,10 @@ Every feature follows the exact same structure:
    ```bash
    cp .env.example .env
    # Configure your database and other services
+   
+   # Optional: Enable experimental features
+   echo "ENABLE_AI_ANALYSIS=true" >> .env
+   echo "ENABLE_ENHANCED_SEARCH=true" >> .env
    ```
 
 3. **Run migrations**:
@@ -329,6 +391,8 @@ See **[docs/INDEX.md](./INDEX.md)** for all documentation files.
 - **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)** - Testing setup and strategy
 - **[TYPE_SYSTEM_DOCUMENTATION.md](./TYPE_SYSTEM_DOCUMENTATION.md)** - Schemas and types
 - **[VSCODE_SETUP.md](./VSCODE_SETUP.md)** - VS Code configuration
+- **[versioning_analysis.md](./versioning_analysis.md)** - API evolution strategy
+- **[BREAKING_CHANGES.md](../BREAKING_CHANGES.md)** - Breaking changes log
 
 ### **API Documentation**
 - **Swagger UI**: `http://localhost:3000/doc`

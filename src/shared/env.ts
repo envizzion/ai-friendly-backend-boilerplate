@@ -36,6 +36,13 @@ const envSchema = z.object({
   // Mistral AI configuration
   MISTRAL_API_KEY: z.string().optional(), // Mistral AI API key
 
+  // Feature flags for experimental features
+  ENABLE_ENHANCED_SEARCH: z.string().default('false'),
+  ENABLE_AI_ANALYSIS: z.string().default('false'),
+  ENABLE_ADVANCED_FILTERS: z.string().default('false'),
+  ENABLE_VENDOR_FEATURES: z.string().default('false'),
+  ENABLE_WISHLIST: z.string().default('false'),
+
 });
 
 export default envSchema.parse(process.env);
